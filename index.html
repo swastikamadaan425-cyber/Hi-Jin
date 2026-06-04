@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hi Jin — The Hygiene Genie</title>
+  <!-- Import SF Pro / Inter fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Tailwind CSS CDN for high-fidelity responsive design layout -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#ea0001',
+            bglight: '#fcfcfc',
+            surfacegrey: '#f0f0f0',
+            bordergrey: '#e0e0e0',
+            textdark: '#1a1a1a',
+            textmuted: '#666666',
+          },
+          fontFamily: {
+            sans: ['"SF Pro Text"', '-apple-system', 'BlinkMacSystemFont', 'Inter', 'system-ui', 'sans-serif'],
+            display: ['"SF Pro Text"', '-apple-system', 'BlinkMacSystemFont', 'Inter', 'system-ui', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Absolute visual polish & customization matching Professional Polish */
+    body {
+      background-color: #f0f0f0;
+      font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      color: #1a1a1a;
+    }
+    
+    /* Fine-tune scrollbar matching the red theme */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #fcfcfc;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #ea000133;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #ea000166;
+    }
+
+    /* Soft scale transitions for view navigation feel */
+    .view-section {
+      animation: fadeIn 0.25s ease-out forwards;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(4px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Status badge styling matching exact design specs */
+    .status-badge {
+      font-size: 10px;
+      font-weight: 600;
+      background: #eee;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-neutral-800 flex justify-center selection:bg-red-100 selection:text-red-700">
+
+  <!-- Main Mobile-Responsive Device Container (centered on wide view, fits screen perfectly on mobile) -->
+  <div id="app-container" class="w-full max-w-md bg-bglight min-h-screen flex flex-col relative shadow-2xl shadow-neutral-300/40 border-x border-[#e0e0e0] flex-1">
+
+    <!-- FIXED TOP HEADER (Height matching professional polish h-[64px]) -->
+    <header class="fixed top-0 left-0 right-0 max-w-md mx-auto h-[64px] bg-primary text-white flex items-center justify-between px-6 z-50 shadow-md">
+      <!-- Logo Left -->
+      <div id="app-logo" class="flex items-center gap-2">
+        <span class="text-2xl font-extrabold tracking-tight font-display flex items-center select-none">
+          Hi Jin <span class="ml-1 text-xl animate-bounce">🧞</span>
+        </span>
+      </div>
+
+      <!-- Role Selector Right -->
+      <nav id="role-selector" class="flex items-center gap-2">
+        <button id="role-customer" class="px-4 py-1.5 rounded-full text-xs font-semibold bg-white text-primary border-2 border-white transition-all duration-200 shadow-sm" aria-label="Customer Role">
+          Customer
+        </button>
+        <button id="role-vendor" class="px-4 py-1.5 rounded-full text-xs font-semibold border-2 border-white text-white hover:bg-white/10 transition-all duration-200 bg-transparent" aria-label="Vendor Role">
+          Vendor
+        </button>
+        <button id="role-admin" class="hidden px-4 py-1.5 rounded-full text-xs font-semibold border-2 border-white text-white hover:bg-white/10 transition-all duration-200 bg-transparent" aria-label="Admin Role">
+          Admin
+        </button>
+      </nav>
+    </header>
+
+    <!-- MAIN CONTENT SCROLLER -->
+    <main class="flex-1 pt-[80px] px-6 flex flex-col">
+
+      <!-- ==================== 1. CUSTOMER VIEW ==================== -->
+      <section id="view-customer" class="view-section flex flex-col flex-1 pb-24">
+        
+        <!-- Welcome Hero/Branding -->
+        <div class="mb-5 text-center mt-2">
+          <h2 class="text-xl font-bold font-display text-[#1a1a1a] leading-snug">The Hygiene Genie At Your Service</h2>
+          <p class="text-xs text-[#666666] mt-0.5 font-medium">Premium medical-grade sanitation, instantly booked.</p>
+        </div>
+
+        <!-- 4 Customer Tabs Managed Dynamically -->
+        
+        <!-- Customer Tab: HOME -->
+        <article id="cust-content-home" class="flex flex-col gap-4">
+          <!-- Featured Action Card (styled with professional polish parameters) -->
+          <div class="bg-white rounded-xl p-6 border border-[#e0e0e0] shadow-sm relative overflow-hidden">
+            <div class="absolute -right-6 -top-6 w-24 h-24 bg-red-50 rounded-full flex items-center justify-center opacity-70">
+              <span class="text-3xl mt-5 mr-5">✨</span>
+            </div>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-primary uppercase tracking-wide border border-red-100 mb-3">
+              Home
+            </span>
+            <h3 class="text-base font-bold text-[#1a1a1a] leading-tight">Instant Sanitization Request</h3>
+            <p class="text-xs text-[#666666] mt-1.5 leading-relaxed">Need your venue disinfected? Summon your Hygiene Genie for medical-grade sterilization services mapped precisely near you.</p>
+            
+            <button class="mt-4 w-full h-10 bg-primary hover:bg-red-700 active:transform active:scale-[0.98] transition-all text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-sm" onclick="alert('Instant Sanitization service is coming soon!')">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.937A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.582a.5.5 0 0 1 0 .962L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3h.01"/><path d="M4 20h.01"/><path d="M4 4h.01"/><path d="M20 20h.01"/></svg>
+              Summon Hygiene Genie
+            </button>
+          </div>
+
+          <!-- Mandatory Tab Placeholder Card (Exact match of card-placeholder styles) -->
+          <div class="bg-white rounded-xl p-10 border border-[#e0e0e0] flex flex-col items-center justify-center text-center shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
+            <div style="font-size: 48px;" class="mb-4">🏠</div>
+            <h2 class="text-lg font-bold text-[#1a1a1a]">[Home] — coming soon</h2>
+            <p class="text-xs text-[#666666] mt-2 max-w-[280px] leading-relaxed">Our beautiful custom customer control center and fast-booking interface is currently being polished by the magic genies.</p>
+          </div>
+        </article>
+
+        <!-- Customer Tab: WALLET -->
+        <article id="cust-content-wallet" class="flex flex-col gap-4 hidden">
+          <!-- Stylized Wallet Card -->
+          <div class="bg-gradient-to-br from-neutral-900 to-neutral-800 text-white rounded-xl p-6 border border-neutral-800 shadow-md relative overflow-hidden">
+            <div class="absolute right-0 bottom-0 top-0 w-24 bg-red-600/10 skew-x-12 translate-x-8 pointer-events-none"></div>
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-[10px] uppercase font-semibold text-neutral-400 tracking-wider">Jin Wallet</p>
+                <p class="text-2xl font-bold font-display mt-2">₹0.00</p>
+              </div>
+              <span class="text-xl px-2 py-0.5 bg-neutral-700/60 rounded-lg border border-neutral-700/40 text-neutral-300 font-mono text-[9px] uppercase tracking-widest">
+                Hi Jin Pay
+              </span>
+            </div>
+            <div class="mt-8 flex justify-between items-center text-[10px] text-neutral-400 font-mono">
+              <span>SWASTIKA MADAAN</span>
+              <span>•••• 4250</span>
+            </div>
+          </div>
+
+          <!-- Transaction List Helper -->
+          <div class="bg-white rounded-xl p-5 border border-[#e0e0e0] shadow-sm">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-[#666666] mb-3">Recent Activity</h4>
+            <div class="flex items-center justify-between py-2 border-b border-neutral-100 text-xs text-[#1a1a1a]">
+              <div class="flex items-center gap-2">
+                <span class="p-1.5 rounded-full bg-red-50 text-primary">✨</span>
+                <div>
+                  <p class="font-medium">Inaugural Sparkle Gift</p>
+                  <p class="text-[10px] text-[#666666]">June 4, 2026</p>
+                </div>
+              </div>
+              <span class="font-semibold text-emerald-600">+ ₹500.00</span>
+            </div>
+            <div class="flex items-center justify-between py-2 text-xs opacity-60">
+              <p class="text-[10px] text-neutral-400 italic">No additional transactions yet</p>
+            </div>
+          </div>
+
+          <!-- Mandatory Tab Placeholder Card (Exact match of card-placeholder styles) -->
+          <div class="bg-white rounded-xl p-10 border border-[#e0e0e0] flex flex-col items-center justify-center text-center shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
+            <div style="font-size: 48px;" class="mb-4">💳</div>
+            <h2 class="text-lg font-bold text-[#1a1a1a]">[Wallet] — coming soon</h2>
+            <p class="text-xs text-[#666666] mt-2 max-w-[280px] leading-relaxed">Integrated split payments, dynamic coupon redemptions, and corporate billings are coming very soon.</p>
+          </div>
+        </article>
+
+        <!-- Customer Tab: FEEDBACK -->
+        <article id="cust-content-feedback" class="flex flex-col gap-4 hidden">
+          <!-- High fidelity Feedback Request Form Card -->
+          <div class="bg-white rounded-xl p-6 border border-[#e0e0e0] shadow-sm">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-primary uppercase tracking-wide border border-red-100 mb-3">
+              Rate Your Service
+            </span>
+            <h3 class="text-base font-bold text-[#1a1a1a]">Review Last Hygiene Session</h3>
+            <p class="text-xs text-[#666666] mt-1">We listen carefully to make our quality impeccable.</p>
+            
+            <div class="flex gap-2.5 my-4 justify-center">
+              <button class="text-neutral-300 hover:text-amber-400 text-2xl transition-all" aria-label="1 star">★</button>
+              <button class="text-neutral-300 hover:text-amber-400 text-2xl transition-all" aria-label="2 stars">★</button>
+              <button class="text-neutral-300 hover:text-amber-400 text-2xl transition-all" aria-label="3 stars">★</button>
+              <button class="text-neutral-300 hover:text-amber-400 text-2xl transition-all" aria-label="4 stars">★</button>
+              <button class="text-neutral-300 hover:text-amber-400 text-2xl transition-all" aria-label="5 stars">★</button>
+            </div>
+
+            <textarea placeholder="Write down your experience with our Hygiene Genie..." rows="3" class="w-full text-xs p-3 rounded-xl border border-neutral-200 bg-neutral-50 text-neutral-700 placeholder:text-neutral-400 focus:outline-none focus:border-red-400 transition-all resize-none"></textarea>
+            
+            <button class="mt-4 w-full h-10 bg-primary hover:bg-red-700 text-white rounded-xl text-xs font-semibold flex items-center justify-center shadow-sm" onclick="alert('Thank you! Feedback module coming soon.')">
+              Submit Review
+            </button>
+          </div>
+
+          <!-- Mandatory Tab Placeholder Card (Exact match of card-placeholder styles) -->
+          <div class="bg-white rounded-xl p-10 border border-[#e0e0e0] flex flex-col items-center justify-center text-center shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
+            <div style="font-size: 48px;" class="mb-4">💬</div>
+            <h2 class="text-lg font-bold text-[#1a1a1a]">[Feedback] — coming soon</h2>
+            <p class="text-xs text-[#666666] mt-2 max-w-[280px] leading-relaxed">Direct message boards connecting you to the dispatch heads instantly will reside in this portal.</p>
+          </div>
+        </article>
+
+        <!-- Customer Tab: PROFILE -->
+        <article id="cust-content-profile" class="flex flex-col gap-4 hidden">
+          <!-- Profile Card Mock -->
+          <div class="bg-white rounded-xl p-5 border border-[#e0e0e0] shadow-sm flex items-center gap-4">
+            <div class="h-14 w-14 rounded-full bg-primary/10 text-primary font-bold text-xl flex items-center justify-center border border-red-100">
+              SM
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-[#1a1a1a] font-display">Swastika Madaan</h3>
+              <p class="text-xs text-[#666666] mt-0.5">swastikamadaan425@gmail.com</p>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-green-50 text-green-700 border border-green-100 mt-1">
+                Verified Account
+              </span>
+            </div>
+          </div>
+
+          <!-- Profile Details Mock List -->
+          <div class="bg-white rounded-xl p-4 border border-[#e0e0e0] shadow-sm text-xs">
+            <div class="flex justify-between py-2.5 border-b border-neutral-100">
+              <span class="text-[#666666]">Phone Number</span>
+              <span class="font-medium text-[#1a1a1a]">+91 •••••••425</span>
+            </div>
+            <div class="flex justify-between py-2.5 border-b border-neutral-100">
+              <span class="text-[#666666]">Default Service Address</span>
+              <span class="font-medium text-[#1a1a1a] text-right max-w-[160px] truncate">Delhi, NCR, India</span>
+            </div>
+            <div class="flex justify-between py-2.5">
+              <span class="text-[#666666]">Membership Tier</span>
+              <span class="font-semibold text-primary">Sparkle Premium</span>
+            </div>
+          </div>
+
+          <!-- Admin Access Portal Card -->
+          <div class="bg-stone-50 rounded-xl p-5 border border-stone-200 shadow-sm flex flex-col gap-3">
+            <div class="flex items-center gap-3">
+              <span class="text-lg">🛡️</span>
+              <div>
+                <h4 class="text-xs font-bold text-[#1a1a1a]">Console Authorization</h4>
+                <p class="text-[11px] text-[#666666] mt-0.5">Unlock secret system configuration panels.</p>
+              </div>
+            </div>
+            <button id="admin-unlock-trigger-btn" class="w-full py-2 bg-stone-800 hover:bg-stone-900 text-white rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              Verify Administrative Credentials
+            </button>
+          </div>
+
+          <!-- Mandatory Tab Placeholder Card (Exact match of card-placeholder styles) -->
+          <div class="bg-white rounded-xl p-10 border border-[#e0e0e0] flex flex-col items-center justify-center text-center shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
+            <div style="font-size: 48px;" class="mb-4">👤</div>
+            <h2 class="text-lg font-bold text-[#1a1a1a]">[Profile] — coming soon</h2>
+            <p class="text-xs text-[#666666] mt-2 max-w-[280px] leading-relaxed">Account settings, sub-user profiles, and history filters are currently coming in the next build.</p>
+          </div>
+        </article>
+
+      </section>
+
+      <!-- ==================== 2. VENDOR VIEW ==================== -->
+      <section id="view-vendor" class="view-section flex flex-col flex-1 pb-16 hidden">
+        
+        <!-- Welcome Hero/Branding -->
+        <div class="mb-5 text-center mt-2">
+          <h2 class="text-xl font-bold font-display text-[#1a1a1a] leading-snug">Vendor Dashboard</h2>
+          <p class="text-xs text-[#666666] mt-0.5 font-medium">Manage supply stocks, service carts, and client compliance.</p>
+        </div>
+
+        <!-- Vertical list of 4 placeholder sections (My Cart | Approvals | Coupons | Feedback) -->
+        <div class="flex flex-col gap-3">
+          
+          <!-- 1. My Cart -->
+          <article class="bg-white rounded-[10px] p-5 border border-[#e0e0e0] shadow-sm hover:bg-[#f0f0f0] transition-colors duration-150 cursor-pointer">
+            <div class="flex items-center justify-between">
+              <span class="font-semibold text-base text-[#1a1a1a]">My Cart</span>
+              <span class="status-badge bg-neutral-200/65 text-neutral-600">12 items</span>
+            </div>
+            <p class="text-xs text-[#666666] mt-1.5 leading-relaxed">Track specialized equipment restocking orders, chemical disinfectants supply chain inputs, and wholesale cart quotas.</p>
+          </article>
+
+          <!-- 2. Approvals -->
+          <article class="bg-white rounded-[10px] p-5 border border-[#e0e0e0] shadow-sm hover:bg-[#f0f0f0] transition-colors duration-150 cursor-pointer">
+            <div class="flex items-center justify-between">
+              <span class="font-semibold text-base text-[#1a1a1a]">Approvals</span>
+              <span class="status-badge bg-[#fff3f3] text-[#ea0001]">3 pending</span>
+            </div>
+            <p class="text-xs text-[#666666] mt-1.5 leading-relaxed">Certify sanitizer solutions specifications, regulatory audit approvals, and contractor field dispatch declarations.</p>
+          </article>
+
+          <!-- 3. Coupons -->
+          <article class="bg-white rounded-[10px] p-5 border border-[#e0e0e0] shadow-sm hover:bg-[#f0f0f0] transition-colors duration-150 cursor-pointer">
+            <div class="flex items-center justify-between">
+              <span class="font-semibold text-base text-[#1a1a1a]">Coupons</span>
+              <span class="status-badge bg-neutral-200/65 text-neutral-600">Active</span>
+            </div>
+            <p class="text-xs text-[#666666] mt-1.5 leading-relaxed">Control local vendor-specific promotion programs, hygiene discount items, and loyalty campaign offerings.</p>
+          </article>
+
+          <!-- 4. Feedback -->
+          <article class="bg-white rounded-[10px] p-5 border border-[#e0e0e0] shadow-sm hover:bg-[#f0f0f0] transition-colors duration-150 cursor-pointer">
+            <div class="flex items-center justify-between">
+              <span class="font-semibold text-base text-[#1a1a1a]">Feedback</span>
+              <span class="status-badge bg-emerald-50 text-emerald-700 border border-emerald-100">98% Positive</span>
+            </div>
+            <p class="text-xs text-[#666666] mt-1.5 leading-relaxed">Monitor review aggregates, client sanitization ratings, and supervisor inspect performance logs.</p>
+          </article>
+
+        </div>
+      </section>
+
+      <!-- ==================== 3. ADMIN VIEW ==================== -->
+      <section id="view-admin" class="view-section flex flex-col flex-1 pb-16 hidden">
+        
+        <!-- Welcome Hero/Branding -->
+        <div class="mb-5 text-center mt-2">
+          <h2 class="text-xl font-bold font-display text-[#1a1a1a] leading-snug">System Administration</h2>
+          <p class="text-xs text-[#666666] mt-0.5 font-medium">Control global settings, manage master directories, and export audits.</p>
+        </div>
+
+        <!-- Exit console button -->
+        <div class="mb-5">
+          <button id="admin-lock-console-btn" class="w-full py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Lock & Exit Admin Mode
+          </button>
+        </div>
+
+        <!-- Vertical list of 5 placeholder sections (Vendors | Carts | Coupons | Banners | Reports) -->
+        <div class="flex flex-col gap-3">
+          
+          <!-- 1. Vendors -->
+          <article class="bg-white rounded-[10px] p-5 border border-[#e0e0e0] shadow-sm hover:bg-[#f0f0f0] transition-colors duration-150 cursor-pointer flex justify-between items-center">
+            <span class="font-semibold text-base text-[#1a1a1a]">Vendors</span>
+            <span class="text-[#666666] opacity-50 font-bold">&#8594;</span>
+          </article>
+
+          <!-- 2. Carts -->
+          <article class="bg-white rounded-[10px] p-5 border border-[#e0e0e0] shadow-sm hover:bg-[#f0f0f0] transition-colors duration-150 cursor-pointer flex justify-between items-center">
+            <span class="font-semibold text-base text-[#1a1a1a]">Carts</span>
+            <span class="text-[#666666] opacity-50 font-bold">&#8594;</span>
+          </article>
+
+          <!-- 3. Coupons -->
+          <article class="bg-white rounded-[10px] p-5 border border-[#e0e0e0] shadow-sm hover:bg-[#f0f0f0] transition-colors duration-150 cursor-pointer flex justify-between items-center">
+            <span class="font-semibold text-base text-[#1a1a1a]">Coupons</span>
+            <span class="text-[#666666] opacity-50 font-bold">&#8594;</span>
+          </article>
+
+          <!-- 4. Banners -->
+          <article class="bg-white rounded-[10px] p-5 border border-[#e0e0e0] shadow-sm hover:bg-[#f0f0f0] transition-colors duration-150 cursor-pointer flex justify-between items-center">
+            <span class="font-semibold text-base text-[#1a1a1a]">Banners</span>
+            <span class="text-[#666666] opacity-50 font-bold">&#8594;</span>
+          </article>
+
+          <!-- 5. Reports -->
+          <article class="bg-white rounded-[10px] p-5 border border-[#e0e0e0] shadow-sm hover:bg-[#f0f0f0] transition-colors duration-150 cursor-pointer flex justify-between items-center">
+            <span class="font-semibold text-base text-[#1a1a1a]">Reports</span>
+            <span class="text-[#666666] opacity-50 font-bold">&#8594;</span>
+          </article>
+
+        </div>
+      </section>
+
+    </main>
+
+    <!-- FIXED BOTTOM TAB BAR (ONLY visible when activeRole === 'customer') -->
+    <footer id="bottom-tab-bar" class="fixed bottom-0 left-0 right-0 max-w-md mx-auto h-[64px] bg-white border-t border-[#e0e0e0] flex items-center justify-around z-40 shadow-[0_-4px_12px_rgba(0,0,0,0.02)] px-3">
+      
+      <!-- Tab 1: Home -->
+      <button id="tab-home-btn" class="flex flex-col items-center justify-center flex-1 py-1 text-primary transition-all relative h-full" aria-label="Home Tab">
+        <span class="text-xl mb-0.5">🏠</span>
+        <span class="tab-label text-[12px] font-medium tracking-tight">Home</span>
+        <!-- Active indicator line matching design specs: top: 0, left: 25%, right: 25%, h-[3px], rounded-b-full -->
+        <span class="tab-indicator absolute top-0 left-1/4 right-1/4 h-[3px] bg-primary rounded-b-full transition-all duration-300 scale-x-100"></span>
+      </button>
+
+      <!-- Tab 2: Wallet -->
+      <button id="tab-wallet-btn" class="flex flex-col items-center justify-center flex-1 py-1 text-[#666666] hover:text-neutral-900 transition-all relative h-full" aria-label="Wallet Tab">
+        <span class="text-xl mb-0.5">💳</span>
+        <span class="tab-label text-[12px] font-medium tracking-tight">Wallet</span>
+        <span class="tab-indicator absolute top-0 left-1/4 right-1/4 h-[3px] bg-primary rounded-b-full transition-all duration-300 scale-x-0"></span>
+      </button>
+
+      <!-- Tab 3: Feedback -->
+      <button id="tab-feedback-btn" class="flex flex-col items-center justify-center flex-1 py-1 text-[#666666] hover:text-neutral-900 transition-all relative h-full" aria-label="Feedback Tab">
+        <span class="text-xl mb-0.5">💬</span>
+        <span class="tab-label text-[12px] font-medium tracking-tight">Feedback</span>
+        <span class="tab-indicator absolute top-0 left-1/4 right-1/4 h-0.5 bg-primary rounded-b-full transition-all duration-300 scale-x-0"></span>
+      </button>
+
+      <!-- Tab 4: Profile -->
+      <button id="tab-profile-btn" class="flex flex-col items-center justify-center flex-1 py-1 text-[#666666] hover:text-neutral-900 transition-all relative h-full" aria-label="Profile Tab">
+        <span class="text-xl mb-0.5">👤</span>
+        <span class="tab-label text-[12px] font-medium tracking-tight">Profile</span>
+        <span class="tab-indicator absolute top-0 left-1/4 right-1/4 h-0.5 bg-primary rounded-b-full transition-all duration-300 scale-x-0"></span>
+      </button>
+
+    </footer>
+
+  </div>
+
+  <!-- Vanilla JavaScript Logic -->
+  <script>
+    // State indicators
+    let activeRole = 'customer'; 
+    let activeCustomerTab = 'home'; 
+
+    // DOM selectors for Role Selection
+    const roleButtons = {
+      customer: document.getElementById('role-customer'),
+      vendor: document.getElementById('role-vendor'),
+      admin: document.getElementById('role-admin'),
+    };
+
+    // DOM selectors for Role Views
+    const views = {
+      customer: document.getElementById('view-customer'),
+      vendor: document.getElementById('view-vendor'),
+      admin: document.getElementById('view-admin'),
+    };
+
+    // DOM selectors for customer tabs
+    const customerTabs = {
+      home: document.getElementById('tab-home-btn'),
+      wallet: document.getElementById('tab-wallet-btn'),
+      feedback: document.getElementById('tab-feedback-btn'),
+      profile: document.getElementById('tab-profile-btn'),
+    };
+
+    const customerTabContents = {
+      home: document.getElementById('cust-content-home'),
+      wallet: document.getElementById('cust-content-wallet'),
+      feedback: document.getElementById('cust-content-feedback'),
+      profile: document.getElementById('cust-content-profile'),
+    };
+
+    const bottomTabBar = document.getElementById('bottom-tab-bar');
+
+    // Switch Role View Function
+    function switchRole(role) {
+      activeRole = role;
+
+      // Update Top Nav pill button styles to match design specs precisely
+      Object.keys(roleButtons).forEach(r => {
+        const btn = roleButtons[r];
+        if (r === role) {
+          // Active state (White bg, Red text)
+          btn.className = "px-4 py-1.5 rounded-full text-xs font-semibold bg-white text-primary border-2 border-white transition-all duration-200 shadow-sm";
+          btn.setAttribute('aria-selected', 'true');
+        } else {
+          // Outlined inactive state
+          btn.className = "px-4 py-1.5 rounded-full text-xs font-semibold border-2 border-white text-white hover:bg-white/10 transition-all duration-200 bg-transparent";
+          btn.setAttribute('aria-selected', 'false');
+        }
+      });
+
+      // Show corresponds View and hide the rest
+      Object.keys(views).forEach(v => {
+        if (v === role) {
+          views[v].classList.remove('hidden');
+        } else {
+          views[v].classList.add('hidden');
+        }
+      });
+
+      // Manage Bottom Tab Nav visibility based on Role
+      if (role === 'customer') {
+        bottomTabBar.classList.remove('hidden');
+        switchCustomerTab(activeCustomerTab);
+      } else {
+        bottomTabBar.classList.add('hidden');
+      }
+
+      // Smooth scroll container to the top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Switch Customer Tab Section
+    function switchCustomerTab(tab) {
+      activeCustomerTab = tab;
+
+      Object.keys(customerTabs).forEach(t => {
+        const btn = customerTabs[t];
+        const indicator = btn.querySelector('.tab-indicator');
+
+        if (t === tab) {
+          // Active Tab Styling (Red primary highlights)
+          btn.classList.add('text-primary');
+          btn.classList.remove('text-[#666666]', 'hover:text-neutral-900');
+          if (indicator) {
+            indicator.classList.remove('scale-x-0');
+            indicator.classList.add('scale-x-100');
+          }
+        } else {
+          // Inactive Tab Styling
+          btn.classList.remove('text-primary');
+          btn.classList.add('text-[#666666]', 'hover:text-neutral-900');
+          if (indicator) {
+            indicator.classList.remove('scale-x-100');
+            indicator.classList.add('scale-x-0');
+          }
+        }
+      });
+
+      // Show correct content card block
+      Object.keys(customerTabContents).forEach(tc => {
+        if (tc === tab) {
+          customerTabContents[tc].classList.remove('hidden');
+        } else {
+          customerTabContents[tc].classList.add('hidden');
+        }
+      });
+    }
+
+    // Assign event listeners
+    Object.keys(roleButtons).forEach(role => {
+      roleButtons[role].addEventListener('click', () => switchRole(role));
+    });
+
+    Object.keys(customerTabs).forEach(tab => {
+      customerTabs[tab].addEventListener('click', () => switchCustomerTab(tab));
+    });
+
+    // Handle high-fidelity star highlights on click
+    const ratingButtons = document.querySelectorAll('#cust-content-feedback button');
+    ratingButtons.forEach((starBtn, index) => {
+      starBtn.addEventListener('click', () => {
+        ratingButtons.forEach((btn, i) => {
+          if (i <= index) {
+            btn.classList.remove('text-neutral-300');
+            btn.classList.add('text-amber-400');
+          } else {
+            btn.classList.remove('text-amber-400');
+            btn.classList.add('text-neutral-300');
+          }
+        });
+      });
+    });
+
+    // Administrator Gateway Logic
+    const adminLogoBtn = document.getElementById('app-logo');
+    const adminBtn = document.getElementById('role-admin');
+    const adminUnlockBtn = document.getElementById('admin-unlock-trigger-btn');
+    const adminLockConsoleBtn = document.getElementById('admin-lock-console-btn');
+    const adminAuthModal = document.getElementById('admin-auth-modal');
+    const adminCancelBtn = document.getElementById('admin-cancel-btn');
+    const adminConfirmBtn = document.getElementById('admin-confirm-btn');
+    const adminPasscodeInput = document.getElementById('admin-passcode-input');
+    const adminErrorMsg = document.getElementById('admin-error-msg');
+
+    let logoClickCount = 0;
+    
+    // Logo secret trigger (Tap 5 times)
+    adminLogoBtn.addEventListener('click', () => {
+      logoClickCount++;
+      if (logoClickCount >= 5) {
+        logoClickCount = 0;
+        openAdminAuthModal();
+      }
+      setTimeout(() => {
+        logoClickCount = 0;
+      }, 3500);
+    });
+
+    if (adminUnlockBtn) {
+      adminUnlockBtn.addEventListener('click', openAdminAuthModal);
+    }
+
+    if (adminCancelBtn) {
+      adminCancelBtn.addEventListener('click', closeAdminAuthModal);
+    }
+
+    if (adminConfirmBtn) {
+      adminConfirmBtn.addEventListener('click', verifyAdminPasscode);
+    }
+
+    if (adminLockConsoleBtn) {
+      adminLockConsoleBtn.addEventListener('click', lockAdminMode);
+    }
+
+    // Allow Enter key on passcode input
+    adminPasscodeInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        verifyAdminPasscode();
+      }
+    });
+
+    function openAdminAuthModal() {
+      adminAuthModal.classList.remove('hidden');
+      adminErrorMsg.classList.add('hidden');
+      adminPasscodeInput.value = '';
+      setTimeout(() => {
+        adminAuthModal.classList.remove('opacity-0');
+        adminAuthModal.querySelector('div').classList.remove('scale-95');
+        adminPasscodeInput.focus();
+      }, 50);
+    }
+
+    function closeAdminAuthModal() {
+      adminAuthModal.classList.add('opacity-0');
+      adminAuthModal.querySelector('div').classList.add('scale-95');
+      setTimeout(() => {
+        adminAuthModal.classList.add('hidden');
+      }, 300);
+    }
+
+    function verifyAdminPasscode() {
+      const pin = adminPasscodeInput.value;
+      if (pin === '1224') {
+        // Unlock Administration
+        adminBtn.classList.remove('hidden');
+        closeAdminAuthModal();
+        switchRole('admin');
+      } else {
+        // Show passcode error block
+        adminErrorMsg.classList.remove('hidden');
+        adminPasscodeInput.focus();
+        adminPasscodeInput.select();
+        // Shake feedback animation
+        const modalContainer = adminAuthModal.querySelector('div');
+        modalContainer.classList.add('animate-shake');
+        setTimeout(() => {
+          modalContainer.classList.remove('animate-shake');
+        }, 500);
+      }
+    }
+
+    function lockAdminMode() {
+      adminBtn.classList.add('hidden');
+      switchRole('customer');
+      switchCustomerTab('profile');
+    }
+
+    // Initialize application to the Default Role & Tab View
+    switchRole('customer');
+  </script>
+
+  <!-- ==================== ADMIN PASSCODE AUTHENTICATION DIALOG (Professional Blur Overlay) ==================== -->
+  <div id="admin-auth-modal" class="fixed inset-0 bg-black/50 backdrop-blur-[4px] z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+    <div class="bg-white rounded-2xl p-6 w-11/12 max-w-xs border border-[#e0e0e0] shadow-2xl flex flex-col gap-4 transform scale-95 transition-transform duration-300">
+      
+      <div class="text-center">
+        <span class="inline-flex h-12 w-12 rounded-full bg-red-50 text-primary items-center justify-center text-xl font-bold mb-3 select-none">
+          🧞
+        </span>
+        <h3 class="text-base font-bold text-[#1a1a1a]">Admin Verification</h3>
+        <p class="text-[11px] text-[#666666] mt-1 leading-relaxed">Enter administrative passcode to unlock consolidated ledger dashboards & registry control.</p>
+      </div>
+
+      <!-- passcode field -->
+      <div class="flex flex-col gap-1.5">
+        <input type="password" id="admin-passcode-input" maxlength="6" placeholder="••••••••" class="w-full text-center tracking-widest text-[#1a1a1a] bg-neutral-50 border border-neutral-200 rounded-xl py-3 text-lg font-bold placeholder:tracking-normal focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-mono">
+        <p id="admin-error-msg" class="text-[11px] text-primary text-center hidden font-semibold">⚠️ Incorrect administrative passcode.</p>
+        <p class="text-[10px] text-neutral-400 text-center font-medium mt-1">Hint: passcode is <span class="font-bold text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded font-mono">1224</span></p>
+      </div>
+
+      <!-- action buttons -->
+      <div class="grid grid-cols-2 gap-2 mt-2">
+        <button id="admin-cancel-btn" class="w-full py-2.5 rounded-xl text-xs font-semibold text-[#666666] hover:bg-neutral-100 transition-colors border border-neutral-200">
+          Cancel
+        </button>
+        <button id="admin-confirm-btn" class="w-full py-2.5 rounded-xl text-xs font-semibold bg-primary hover:bg-red-700 text-white transition-colors shadow-sm">
+          Authorize
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Shake keyframe animation styling for incorrect pin -->
+  <style>
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      15%, 45%, 75% { transform: translateX(-6px); }
+      30%, 60%, 90% { transform: translateX(6px); }
+    }
+    .animate-shake {
+      animation: shake 0.4s ease-in-out;
+    }
+  </style>
+</body>
+</html>

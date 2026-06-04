@@ -1,0 +1,6 @@
+{
+  "name": "Hi Jin",
+  "description": "Hi Jin — The Hygiene Genie: Your elegant client, vendor, and admin portal for streamlined hygiene services management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

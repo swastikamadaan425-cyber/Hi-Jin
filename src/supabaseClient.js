@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Vercel reads these variables directly from your environment settings
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || window._env_?.REACT_APP_SUPABASE_URL;
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || window._env_?.REACT_APP_SUPABASE_ANON_KEY;
+// Vite requires 'import.meta.env' to read Vercel environment variables
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');

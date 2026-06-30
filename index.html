@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,24 +6,6 @@
   <meta name="description" content="Discover hygienic street food carts near you. Rate vendors, redeem coupons, and eat safely with Hi Jin.">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#ea0001">
-  <!-- Live Database and Camera Optics Engines -->
-<script src="https://jsdelivr.net"></script>
-<script src="https://jsdelivr.net"></script>
-
-<script>
-  // Put your actual Supabase text keys right inside these quotes
-  const SUPABASE_URL = "https://wcipnmwnguzchmsjqegt.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjaXBubXduZ3V6Y2htc2pxZWd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2NjI3OTgsImV4cCI6MjA5ODIzODc5OH0.Y9wUXjqgY3ssHzpfNbF2bUbJ_aVz5Nd6kPxR-Ja4jSM";
-
-  // Connects the app automatically to your cloud database
-  let supabase = null;
-  if (SUPABASE_URL && SUPABASE_ANON_KEY && typeof window.supabase !== 'undefined') {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    window.supabase = supabase; // global map lock
-    console.log("Hi Jin connected to Supabase live!");
-  }
-</script>
-
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='%23ea0001'/><text y='.9em' x='50%' text-anchor='middle' font-size='58' font-family='sans-serif' fill='white' font-weight='700'>H</text></svg>">
   
   <style>
@@ -1453,7 +1433,7 @@
         loadVendorPanel();
       } else if (viewId === 'admin-view') {
         loadAdminPanel();
-
+      }
     }
 
     function updateAuthScreen(screen) {
@@ -1521,12 +1501,12 @@
         if (loginForm) loginForm.style.display = 'none';
         if (signupForm) signupForm.style.display = 'block';
         if (loginBtn) loginBtn.classList.remove('active');
-        if (signupBtn) signupBtn.classList.add('add');
+        if (signupBtn) signupBtn.classList.add('active');
       }
     }
 
-    // Customer Event Handlers & Submissions -> Upgraded to Supabase Core
-    window.handleCustomerLogin = async function(e) {
+    // Customer Event Handlers & Submissions
+    window.handleCustomerLogin = function(e) {
       if (e) e.preventDefault();
       const email = document.getElementById('cust-login-email').value.trim();
       const pass = document.getElementById('cust-login-password').value;
@@ -1534,14 +1514,8 @@
 
       if (errorEl) errorEl.style.display = 'none';
 
-      let targetUser = null;
-      if (window.supabase) {
-        const { data, error } = await window.supabase.from('hijin_users').select('*').eq('email', email).eq('password', pass).eq('role', 'customer').maybeSingle();
-        if (!error && data) targetUser = data;
-      } else {
-        const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
-        targetUser = users.find(u => u.email === email && u.password === pass && u.role === 'customer');
-      }
+      const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
+      const targetUser = users.find(u => u.email === email && u.password === pass && u.role === 'customer');
 
       if (!targetUser) {
         if (errorEl) {
@@ -1551,11 +1525,11 @@
         return;
       }
 
-      localStorage.setItem('hijin_session', JSON.stringify({ userId: String(targetUser.id), email: targetUser.email, role: 'customer' }));
+      localStorage.setItem('hijin_session', JSON.stringify({ userId: targetUser.id, role: 'customer' }));
       showView('customer-view');
     }
 
-    window.handleCustomerSignup = async function(e) {
+    window.handleCustomerSignup = function(e) {
       if (e) e.preventDefault();
       
       const name = document.getElementById('cust-signup-name').value.trim();
@@ -1593,61 +1567,45 @@
 
       if (!isValid) return;
 
-      let exists = false;
-      if (window.supabase) {
-        const { data } = await window.supabase.from('hijin_users').select('id').eq('email', email).maybeSingle();
-        if (data) exists = true;
-      } else {
-        const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
-        exists = users.some(u => u.email === email);
-      }
-
+      const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
+      const exists = users.some(u => u.email === email);
       if (exists) {
         showInputError('cust-signup-email-error', 'An account with this email already exists.');
         return;
       }
 
+      // Perform registration with helper states
       const submitBtn = document.getElementById('cust-signup-submit-btn');
       submitBtn.disabled = true;
       submitBtn.textContent = 'Creating...';
 
-      const generatedId = String(Date.now());
-      const newUser = {
-        id: generatedId,
-        name,
-        email,
-        phone,
-        password: pass,
-        role: 'customer',
-        walletBalance: 60,
-        createdAt: new Date().toISOString()
-      };
+      setTimeout(() => {
+        const newUser = {
+          id: Date.now(),
+          name,
+          email,
+          phone,
+          password: pass,
+          role: 'customer',
+          walletBalance: 0,
+          createdAt: new Date().toISOString()
+        };
 
-      if (window.supabase) {
-        const { error } = await window.supabase.from('hijin_users').insert([newUser]);
-        if (error) {
-          alert('Database connection error: ' + error.message);
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Create Account';
-          return;
-        }
-      } else {
-        const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
         users.push(newUser);
         localStorage.setItem('hijin_users', JSON.stringify(users));
-      }
+        localStorage.setItem('hijin_session', JSON.stringify({ userId: newUser.id, role: 'customer' }));
 
-      localStorage.setItem('hijin_session', JSON.stringify({ userId: generatedId, email: newUser.email, role: 'customer' }));
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Create Account';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Account';
+
         // Clear values
         document.querySelectorAll('#customer-signup-form input').forEach(el => el.value = '');
         showView('customer-view');
-     };
+      }, 750);
+    }
 
-
-    // Vendor Event Handlers & Submissions -> Upgraded to Supabase Core
-    window.handleVendorLogin = async function(e) {
+    // Vendor Event Handlers & Submissions
+    window.handleVendorLogin = function(e) {
       if (e) e.preventDefault();
       const email = document.getElementById('vendor-login-email').value.trim();
       const pass = document.getElementById('vendor-login-password').value;
@@ -1655,14 +1613,8 @@
 
       if (errorEl) errorEl.style.display = 'none';
 
-      let targetUser = null;
-      if (window.supabase) {
-        const { data, error } = await window.supabase.from('hijin_users').select('*').eq('email', email).eq('password', pass).eq('role', 'vendor').maybeSingle();
-        if (!error && data) targetUser = data;
-      } else {
-        const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
-        targetUser = users.find(u => u.email === email && u.password === pass && u.role === 'vendor');
-      }
+      const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
+      const targetUser = users.find(u => u.email === email && u.password === pass && u.role === 'vendor');
 
       if (!targetUser) {
         if (errorEl) {
@@ -1672,11 +1624,11 @@
         return;
       }
 
-      localStorage.setItem('hijin_session', JSON.stringify({ userId: String(targetUser.id), email: targetUser.email, role: 'vendor' }));
+      localStorage.setItem('hijin_session', JSON.stringify({ userId: targetUser.id, role: 'vendor' }));
       showView('vendor-view');
     }
 
-    window.handleVendorSignup = async function(e) {
+    window.handleVendorSignup = function(e) {
       if (e) e.preventDefault();
 
       const ownerName = document.getElementById('vendor-signup-owner').value.trim();
@@ -1724,15 +1676,8 @@
 
       if (!isValid) return;
 
-      let exists = false;
-      if (window.supabase) {
-        const { data } = await window.supabase.from('hijin_users').select('id').eq('email', email).maybeSingle();
-        if (data) exists = true;
-      } else {
-        const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
-        exists = users.some(u => u.email === email);
-      }
-
+      const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
+      const exists = users.some(u => u.email === email);
       if (exists) {
         showInputError('vendor-signup-email-error', 'An account with this email already exists.');
         return;
@@ -1742,66 +1687,60 @@
       submitBtn.disabled = true;
       submitBtn.textContent = 'Registering...';
 
-      const generatedUserId = String(Date.now());
-      const generatedVendorId = String(Date.now() + 1);
+      setTimeout(() => {
+        // Create user
+        const newUser = {
+          id: Date.now(),
+          name: ownerName,
+          email,
+          phone,
+          password: pass,
+          role: 'vendor',
+          walletBalance: 0,
+          createdAt: new Date().toISOString()
+        };
 
-      const newUser = {
-        id: generatedUserId,
-        name: ownerName,
-        email,
-        phone,
-        password: pass,
-        role: 'vendor',
-        walletBalance: 0,
-        createdAt: new Date().toISOString()
-      };
+        // Create vendor profile matching keys precisely
+        const newVendor = {
+          id: Date.now() + 1,
+          userId: newUser.id,
+          ownerName: ownerName,
+          email: email,
+          phone: phone,
+          businessName: bizName,
+          city: city,
+          status: "pending",
+          gst: "",
+          fssai: "",
+          address: "",
+          pincode: "",
+          lat: null,
+          lng: null,
+          cartImageUrls: [],
+          description: "",
+          createdAt: new Date().toISOString()
+        };
 
-      const newVendor = {
-        id: generatedVendorId,
-        userId: generatedUserId,
-        ownerName: ownerName,
-        email: email,
-        phone: phone,
-        businessName: bizName,
-        city: city,
-        status: "pending",
-        gst: "",
-        fssai: "",
-        address: "",
-        pincode: "",
-        lat: null,
-        lng: null,
-        cartImageUrls: [],
-        description: "",
-        createdAt: new Date().toISOString()
-      };
-
-      if (window.supabase) {
-        const userInsert = await window.supabase.from('hijin_users').insert([newUser]);
-        const vendorInsert = await window.supabase.from('hijin_vendors').insert([newVendor]);
-        
-        if (userInsert.error || vendorInsert.error) {
-          alert('Cloud registration error: ' + (userInsert.error?.message || vendorInsert.error?.message));
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Register My Cart';
-          return;
-        }
-      } else {
-        const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
-        const vendors = JSON.parse(localStorage.getItem("hijin_vendors") || "[]");
         users.push(newUser);
+        const vendors = JSON.parse(localStorage.getItem("hijin_vendors") || "[]");
         vendors.push(newVendor);
+
         localStorage.setItem('hijin_users', JSON.stringify(users));
         localStorage.setItem("hijin_vendors", JSON.stringify(vendors));
-      }
+        localStorage.setItem('hijin_session', JSON.stringify({ userId: newUser.id, role: 'vendor' }));
 
-      localStorage.setItem('hijin_session', JSON.stringify({ userId: generatedUserId, email: newUser.email, role: 'vendor' }));
+        console.log("Vendor saved. Total vendors in localStorage:", vendors.length, vendors);
 
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Register My Cart';
+        console.log("Session userId:", newUser.id);
+        console.log("Vendor userId:", newVendor.userId);
+        console.log("Match:", newUser.id === newVendor.userId);
 
-      document.querySelectorAll('#vendor-signup-form input').forEach(el => el.value = '');
-      showView('vendor-view');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Register My Cart';
+
+        document.querySelectorAll('#vendor-signup-form input').forEach(el => el.value = '');
+        showView('vendor-view');
+      }, 750);
     }
 
     function showInputError(id, text) {
@@ -1840,18 +1779,12 @@
       }
     }
 
-    async function renderCustomerProfile() {
+    function renderCustomerProfile() {
       const session = JSON.parse(localStorage.getItem('hijin_session') || 'null');
       if (!session || session.role !== 'customer') return;
 
-      let user = null;
-      if (window.supabase) {
-        const { data } = await window.supabase.from('hijin_users').select('*').eq('id', session.userId).maybeSingle();
-        user = data;
-      } else {
-        const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
-        user = users.find(u => String(u.id) === String(session.userId));
-      }
+      const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
+      const user = users.find(u => u.id === session.userId);
       if (!user) return;
 
       const initials = user.name ? user.name.charAt(0).toUpperCase() : 'U';
@@ -1865,7 +1798,8 @@
             <p style="font-size: 14px; color: var(--muted); margin-bottom: 2px;">Email: ${escapeHtml(user.email)}</p>
             <p style="font-size: 14px; color: var(--muted); margin-bottom: 8px;">Phone: ${escapeHtml(user.phone)}</p>
             <p style="font-size: 12px; color: var(--light-muted);">Member since: ${formatDate(user.createdAt)}</p>
-<button type="button" class="btn-logout" id="customer-logout-btn">Logout</button>
+            
+            <button type="button" class="btn-logout" id="customer-logout-btn">Logout</button>
           </div>
         `;
 
@@ -1878,17 +1812,11 @@
       }
     }
 
-    async function loadCustomerPanel() {
+    function loadCustomerPanel() {
       const session = JSON.parse(localStorage.getItem('hijin_session') || 'null');
       if (session && session.role === 'customer') {
-        let user = null;
-        if (window.supabase) {
-          const { data } = await window.supabase.from('hijin_users').select('*').eq('id', session.userId).maybeSingle();
-          user = data;
-        } else {
-          const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
-          user = users.find(u => String(u.id) === String(session.userId));
-        }
+        const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
+        const user = users.find(u => u.id === session.userId);
         if (user) {
           const firstName = user.name ? user.name.split(' ')[0] : 'User';
           const displayEl = document.getElementById('customer-username-display');
@@ -1996,21 +1924,15 @@
       }
     }
 
-    async function renderHomePanel() {
+    function renderHomePanel() {
       const panel = document.getElementById('customer-panel-home');
       if (!panel) return;
 
       const session = JSON.parse(localStorage.getItem('hijin_session') || 'null');
       if (!session || session.role !== 'customer') return;
 
-      let user = null;
-      if (window.supabase) {
-        const { data } = await window.supabase.from('hijin_users').select('*').eq('id', session.userId).maybeSingle();
-        user = data;
-      } else {
-        const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
-        user = users.find(u => String(u.id) === String(session.userId));
-      }
+      const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
+      const user = users.find(u => u.id === session.userId);
       if (!user) return;
 
       detectUserLocationAndSort();
@@ -2022,7 +1944,7 @@
       }
     }
 
-    async function renderCartList(panel, user) {
+    function renderCartList(panel, user) {
       const hrs = new Date().getHours();
       let greeting = 'Good evening';
       if (hrs < 12) {
@@ -2033,16 +1955,9 @@
       
       const firstName = user.name ? user.name.split(' ')[0] : 'User';
 
-      // Get active banners for advertisement strip integration -> Upgraded to Supabase
-      let activeBanners = [];
-      if (window.supabase) {
-        const { data } = await window.supabase.from('hijin_banners').select('*').eq('isActive', true);
-        if (data) activeBanners = data;
-      } else {
-        const banners = JSON.parse(localStorage.getItem('hijin_banners') || '[]');
-        activeBanners = banners.filter(b => b.isActive === true);
-      }
-
+      // Get active banners for advertisement strip integration
+      const banners = JSON.parse(localStorage.getItem('hijin_banners') || '[]');
+      const activeBanners = banners.filter(b => b.isActive === true);
       let bannerHtml = '';
       if (activeBanners.length > 0) {
         let bannerItems = '';
@@ -2083,7 +1998,7 @@
             border-color: #ea0001 !important;
             box-shadow: 0 0 0 2px rgba(234, 0, 1, 0.1);
           }
-</style>
+        </style>
 
         <div id="home-panel-results"></div>
       `;
@@ -2091,122 +2006,205 @@
       renderHomePanelResultsOnly();
     }
 
-        async function renderHomePanelResultsOnly() {
-      const container = document.getElementById('home-panel-results');
-      if (!container || !window.supabase) return;
+    function renderHomePanelResultsOnly() {
+      const resultContainer = document.getElementById('home-panel-results');
+      if (!resultContainer) return;
+
+      const carts = JSON.parse(localStorage.getItem('hijin_carts') || '[]');
+      const query = customerSearchTerm.trim().toLowerCase();
       
-      if (selectedCart) {
-        renderCartDetail(container);
-        return;
+      const filteredCarts = carts.filter(c => {
+        const name = (c.name || c.businessName || "").toLowerCase();
+        const city = (c.city || "").toLowerCase();
+        return name.includes(query) || city.includes(query);
+      });
+
+      const topRatedList = filteredCarts.filter(c => c.isTopRated === true);
+
+      const activeCarts = filteredCarts.filter(c => c.isActive !== false);
+      activeCarts.forEach(c => {
+        c.distance = haversine(userLat, userLng, c.lat || 30.9010, c.lng || 75.8573);
+      });
+      activeCarts.sort((a, b) => a.distance - b.distance);
+
+      let html = '';
+
+      // Top Rated section
+      html += `
+        <div style="margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <span style="font-size: 15px; font-weight: 700; color: #222;">⭐ Top Rated</span>
+            <span style="font-size: 13px; color: #ea0001; cursor: pointer; font-weight: 600;" onclick="clearSearchAndListAll()">View All</span>
+          </div>
+          <div style="display: flex; overflow-x: auto; gap: 12px; padding-bottom: 8px; scrollbar-width: none; -webkit-overflow-scrolling: touch;">
+      `;
+
+      if (topRatedList.length === 0) {
+        html += `
+          <div class="empty-state" style="width: 100%;">
+            <span class="emoji">⭐</span>
+            No top rated carts found.
+          </div>
+        `;
+      } else {
+        topRatedList.forEach(c => {
+          const name = c.name || c.businessName || "Food Cart";
+          const img = (c.imageUrls && c.imageUrls[0]) || (c.cartImageUrls && c.cartImageUrls[0]) || 'https://placehold.co/400x220/ea0001/ffffff?text=Food+Cart';
+          const rRating = Math.round(c.avgRating || 0);
+          let starHtml = '';
+          for (let i = 0; i < rRating; i++) starHtml += '★';
+          for (let i = rRating; i < 5; i++) starHtml += '☆';
+          const firstTag = c.tags && c.tags[0] ? c.tags[0] : "Veg";
+
+          html += `
+            <div onclick="selectCartForDetail(${c.id})" style="flex-shrink: 0; width: 155px; background: white; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: transform 0.15s, box-shadow 0.15s;">
+              <img src="${escapeHtml(img)}" style="width: 100%; height: 90px; object-fit: cover;" onerror="this.onerror=null; this.src='https://placehold.co/400x220/ea0001/ffffff?text=Food+Cart';" />
+              <div style="padding: 10px;">
+                <div style="font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; color: #222;" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
+                <div style="margin-top: 4px; display: flex; align-items: center; gap: 2px;">
+                  <span style="color: #ea0001; font-size: 11px;">${starHtml}</span>
+                  <span style="font-size: 11px; color: #666; font-weight: 500; margin-left: 2px;">${(c.avgRating || 0).toFixed(1)}</span>
+                </div>
+                <div style="background: #ea0001; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-top: 6px; display: inline-block; font-weight: 500;">${escapeHtml(firstTag)}</div>
+              </div>
+            </div>
+          `;
+        });
       }
 
-      const { data } = await window.supabase.from('hijin_vendors').select('*').eq('status', 'approved');
-      if (!data || data.length === 0) {
-        container.innerHTML = "<p style='color:#666; font-size:13px; text-align:center; padding:24px;'>No approved hygienic food stalls listed in your town yet.</p>";
-        return;
-      }
-      
-      container.innerHTML = data.map(v => `
-        <div onclick="selectCartForDetail('${v.id}')" style="background:white; border:1px solid #e0e0e0; border-radius:12px; padding:16px; margin-bottom:12px; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
-          <h4 style="color:var(--primary); font-size:16px; font-weight:700;">${escapeHtml(v.businessName || 'Street Vendor')}</h4>
-          <p style="font-size:13px; color:#444; margin-top:4px;">📍 ${escapeHtml(v.address || v.city)}</p>
-          <div style="margin-top:6px; color:#ea0001; font-size:12px; font-weight:600;">★ ${(v.avg_rating || 4.5)} (${v.total_ratings || 0} reviews) →</div>
-        </div>
-      `).join('');
-    }
-
-    async function selectCartForDetail(cartId) {
-      if (!window.supabase) return;
-      const { data } = await window.supabase.from('hijin_vendors').select('*').eq('id', cartId).maybeSingle();
-      if (data) {
-        selectedCart = data;
-        renderHomePanelResultsOnly();
-      }
-    }
-
-    function goBackToGrid() {
-      selectedCart = null;
-      renderHomePanelResultsOnly();
-    }
-
-    async function renderCartDetail(container) {
-      const c = selectedCart;
-      const displayImg = (c.cartImageUrls && c.cartImageUrls.startsWith('data:image')) ? c.cartImageUrls : 'https://placehold.co';
-      
-      container.innerHTML = `
-        <div onclick="goBackToGrid()" style="color:#ea0001; font-size:13px; font-weight:600; margin-bottom:14px; cursor:pointer;">← Back to Grid List</div>
-        <img src="${displayImg}" style="width:100%; max-height:160px; object-fit:cover; border-radius:10px; margin-bottom:12px;" />
-        <h3 style="font-size:18px; font-weight:700; color:#111;">${escapeHtml(c.businessName)}</h3>
-        <p style="font-size:13px; color:#666; margin-top:2px;">📍 ${escapeHtml(c.address || c.city)}</p>
-        <p style="font-size:14px; color:#333; margin-top:8px; line-height:1.5;">${escapeHtml(c.description || "Authentic local tastes prepared cleanly and monitored carefully by Hi Jin.")}</p>
-        
-        <hr style="border:none; border-top:1px solid #eee; margin:16px 0;" />
-        <h4 style="font-size:14px; font-weight:700; margin-bottom:10px;">Platform Reviews Matrix</h4>
-        <div id="cart-detail-reviews-list" style="font-size:13px; color:#555;">Loading feedback logs...</div>
-        
-        <div style="margin-top:16px; background:#fdfdfd; padding:12px; border:1px solid #e0e0e0; border-radius:8px;">
-          <h4 style="font-size:13px; font-weight:700; color:#111; margin-bottom:8px;">Leave an Operations Feedback</h4>
-          <textarea id="review-comment-textarea" placeholder="Share your cleanliness setup experience..." style="min-height:60px; font-size:13px;"></textarea>
-          <button type="button" onclick="submitCloudReview()" class="btn-primary" style="margin-top:8px; min-height:34px; font-size:12px; width:auto; padding:0 16px;">Submit Review</button>
+      html += `
+          </div>
         </div>
       `;
-      await renderCartDetailReviewsList();
-    }
 
-    async function renderCartDetailReviewsList() {
-      const listDiv = document.getElementById('cart-detail-reviews-list');
-      if (!listDiv || !window.supabase || !selectedCart) return;
+      // Nearby section
+      html += `
+        <div style="margin-bottom: 20px;">
+          <div style="font-size: 15px; font-weight: 700; margin-bottom: 12px; color: #222;">📍 Nearby Carts</div>
+      `;
 
-      const { data } = await window.supabase.from('hijin_ratings').select('*').eq('cart_id', selectedCart.id).order('created_at', { ascending: false });
-      if (!data || data.length === 0) {
-        listDiv.innerHTML = "<p style='color:#888; font-style:italic;'>No custom review records written for this storefront yet.</p>";
-        return;
+      if (activeCarts.length === 0) {
+        html += `
+          <div class="empty-state">
+            <span class="emoji">🔍</span>
+            No carts found for your search.
+          </div>
+        `;
+      } else {
+        activeCarts.forEach(c => {
+          const name = c.name || c.businessName || "Food Cart";
+          const img = (c.imageUrls && c.imageUrls[0]) || (c.cartImageUrls && c.cartImageUrls[0]) || 'https://placehold.co/400x220/c8001a/ffffff?text=Food+Cart';
+          const rRating = Math.round(c.avgRating || 0);
+          let starHtml = '';
+          for (let i = 0; i < rRating; i++) starHtml += '★';
+          for (let i = rRating; i < 5; i++) starHtml += '☆';
+          
+          const tags = c.tags || ["Veg", "Hygienic"];
+          const tagsHtml = tags.map(tag => `
+            <span style="background: #ea0001; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-right: 4px; display: inline-block; font-weight: 500;">${escapeHtml(tag)}</span>
+          `).join('');
+
+          html += `
+            <div onclick="selectCartForDetail(${c.id})" style="display: flex; gap: 12px; padding: 12px; background: white; border: 1px solid #e0e0e0; border-radius: 12px; margin-bottom: 10px; cursor: pointer; position: relative; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: background-color 0.15s;">
+              <img src="${escapeHtml(img)}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; flex-shrink: 0;" onerror="this.onerror=null; this.src='https://placehold.co/400x220/c8001a/ffffff?text=Food+Cart';" />
+              <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden;">
+                <div>
+                  <div style="font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #222;">${escapeHtml(name)}</div>
+                  <div style="font-size: 12px; color: #666; margin-top: 2px;">${escapeHtml(c.city || "Ludhiana")} · ${c.distance.toFixed(1)} km</div>
+                </div>
+                <div style="margin-top: 4px; overflow: hidden; height: 18px; white-space: nowrap; text-overflow: ellipsis;">
+                  ${tagsHtml}
+                </div>
+                <div style="margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                  <span style="color: #ea0001; font-size: 12px;">${starHtml}</span>
+                  <span style="font-size: 12px; font-weight: 600; color: #333;">${(c.avgRating || 0).toFixed(1)}</span>
+                  <span style="font-size: 12px; color: #666;">(${(c.totalRatings || 0)})</span>
+                </div>
+              </div>
+              <div style="align-self: flex-end; color: #ea0001; font-size: 13px; font-weight: 600; flex-shrink: 0;">View →</div>
+            </div>
+          `;
+        });
       }
 
-      listDiv.innerHTML = data.map(r => `
-        <div style="border-bottom:1px solid #f5f5f5; padding:8px 0;">
-          <div style="font-weight:600; color:#222;">${escapeHtml(r.customer_name || 'Anonymous')} <span style="color:#eab308; float:right;">${'★'.repeat(r.rating || 5)}</span></div>
-          <p style="color:#555; margin-top:2px; line-height:1.4;">${escapeHtml(r.comment)}</p>
+      html += `
         </div>
+      `;
+
+      resultContainer.innerHTML = html;
+    }
+
+    function renderCartDetail(panel, currentUser) {
+      currentSelectedStars = 0; 
+
+      const c = selectedCart;
+      const name = c.name || c.businessName || "Food Cart";
+      const img = (c.imageUrls && c.imageUrls[0]) || (c.cartImageUrls && c.cartImageUrls[0]) || 'https://placehold.co/400x220/ea0001/ffffff?text=Food+Cart';
+      
+      const rRating = Math.round(c.avgRating || 0);
+      let starHtml = '';
+      for (let i = 0; i < rRating; i++) starHtml += '★';
+      for (let i = rRating; i < 5; i++) starHtml += '☆';
+
+      const tags = c.tags || ["Veg", "Hygienic"];
+      const tagsHtml = tags.map(tag => `
+        <span style="background: #ea0001; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-right: 4px; display: inline-block; font-weight: 500;">${escapeHtml(tag)}</span>
       `).join('');
+
+      panel.innerHTML = `
+        <div onclick="goBackToCartList()" style="color: #ea0001; font-size: 13px; font-weight: 600; margin-bottom: 16px; cursor: pointer; display: inline-block;">
+          ← Back to Carts
+        </div>
+
+        <img src="${escapeHtml(img)}" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);" onerror="this.onerror=null; this.src='https://placehold.co/400x220/ea0001/ffffff?text=Food+Cart';" />
+        
+        <h2 style="font-size: 20px; font-weight: 700; margin-top: 12px; margin-bottom: 4px; color: #222;">${escapeHtml(name)}</h2>
+        <div style="font-size: 13px; color: #666; margin-bottom: 8px;">📍 ${escapeHtml(c.city || "Ludhiana")}</div>
+        
+        <div style="margin-bottom: 8px;">
+          ${tagsHtml}
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 10px;">
+          <span style="color: #ea0001; font-size: 18px;">${starHtml}</span>
+          <span style="font-size: 16px; font-weight: 600; color: #222;">${(c.avgRating || 0).toFixed(1)}</span>
+          <span style="font-size: 13px; color: #666;">(${(c.totalRatings || 0)} ratings)</span>
+        </div>
+
+        <p style="font-size: 14px; color: #444; line-height: 1.6; margin-top: 10px; margin-bottom: 16px;">
+          ${escapeHtml(c.description || "Authentic local tastes prepared cleanly and monitored carefully by Hi Jin.")}
+        </p>
+
+        <hr style="border: none; border-top: 1px solid #f0f0f0; margin: 16px 0;" />
+
+        <div style="font-size: 15px; font-weight: 700; margin-bottom: 12px; color: #222;">Reviews</div>
+        <div id="cart-detail-reviews-list"></div>
+
+        <hr style="border: none; border-top: 1px solid #f0f0f0; margin: 16px 0;" />
+
+        <div style="font-size: 15px; font-weight: 700; margin-bottom: 12px; color: #222;">Leave a Review</div>
+        <div id="cart-detail-review-form-area"></div>
+      `;
+
+      renderCartDetailReviewsList();
+      renderCartDetailReviewForm(currentUser);
     }
 
-    async function submitCloudReview() {
-      const comment = document.getElementById('review-comment-textarea').value.trim();
-      if (!comment || !window.supabase || !selectedCart) return;
-
-      await window.supabase.from('hijin_ratings').insert([{
-        cart_id: selectedCart.id,
-        customer_id: internalSession.userId || "guest",
-        customer_name: internalSession.name || "Hi Jin User",
-        rating: 5,
-        stars: 5,
-        comment: comment
-      }]);
-      alert("Operations feedback logged safely into database index tables!");
-      await renderCartDetailReviewsList();
-    }
-    }
-
+    function renderCartDetailReviewsList() {
       const listContainer = document.getElementById('cart-detail-reviews-list');
       if (!listContainer) return;
 
-      let ratings = [];
-      if (window.supabase) {
-        const { data } = await window.supabase.from('hijin_ratings').select('*').eq('cartId', selectedCart.id).order('createdAt', { ascending: false });
-        if (data) ratings = data;
-      } else {
-        const cached = JSON.parse(localStorage.getItem('hijin_ratings') || '[]');
-        ratings = cached.filter(r => r.cartId === selectedCart.id).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      }
+      const ratings = JSON.parse(localStorage.getItem('hijin_ratings') || '[]');
+      const cartReviews = ratings.filter(r => r.cartId === selectedCart.id);
+      cartReviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-      if (ratings.length === 0) {
+      if (cartReviews.length === 0) {
         listContainer.innerHTML = `<div style="text-align: center; color: #999; padding: 12px 0; font-size: 13px;">Be the first to review this cart! 👇</div>`;
         return;
       }
 
       let html = '';
-      ratings.forEach(r => {
+      cartReviews.forEach(r => {
         const ratingVal = r.rating || r.stars || 5;
         let starStr = '';
         for (let i = 0; i < ratingVal; i++) starStr += '★';
@@ -2229,19 +2227,13 @@
       listContainer.innerHTML = html;
     }
 
-    async function renderCartDetailReviewForm(currentUser) {
+    function renderCartDetailReviewForm(currentUser) {
       const session = JSON.parse(localStorage.getItem('hijin_session') || 'null');
       const formArea = document.getElementById('cart-detail-review-form-area');
       if (!formArea) return;
 
-      let alreadyReviewed = false;
-      if (window.supabase) {
-        const { data } = await window.supabase.from('hijin_ratings').select('id').eq('cartId', selectedCart.id).eq('customerId', session.userId).maybeSingle();
-        if (data) alreadyReviewed = true;
-      } else {
-        const ratings = JSON.parse(localStorage.getItem('hijin_ratings') || '[]');
-        alreadyReviewed = ratings.some(r => r.cartId === selectedCart.id && r.customerId === session.userId);
-      }
+      const ratings = JSON.parse(localStorage.getItem('hijin_ratings') || '[]');
+      const alreadyReviewed = ratings.some(r => r.cartId === selectedCart.id && r.customerId === session.userId);
 
       if (alreadyReviewed) {
         formArea.innerHTML = `<div style="color: #059669; font-size: 14px; font-weight: 500; padding: 8px 0; text-align: left;">✅ You've already reviewed this cart.</div>`;
@@ -2286,7 +2278,7 @@
           } else {
             star.textContent = '☆';
             star.style.color = '#ccc';
-}
+          }
         }
       }
     };
@@ -2320,7 +2312,7 @@
       }
     };
 
-    window.submitCustomerReview = async function() {
+    window.submitCustomerReview = function() {
       const commentInput = document.getElementById('review-comment-textarea');
       const errMessage = document.getElementById('review-error-message');
       
@@ -2350,15 +2342,8 @@
 
       const session = JSON.parse(localStorage.getItem('hijin_session') || 'null');
       if (!session) return;
-
-      let user = null;
-      if (window.supabase) {
-        const { data } = await window.supabase.from('hijin_users').select('*').eq('id', session.userId).maybeSingle();
-        user = data;
-      } else {
-        const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
-        user = users.find(u => String(u.id) === String(session.userId));
-      }
+      const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
+      const user = users.find(u => u.id === session.userId);
       const customerName = user ? (user.name || "Customer") : "Customer";
 
       const newReview = {
@@ -2372,42 +2357,26 @@
         createdAt: new Date().toISOString()
       };
 
-      if (window.supabase) {
-        await window.supabase.from('hijin_ratings').insert([newReview]);
-        
-        // Dynamic aggregations recalculation on cloud node
-        const { data: cloudRatings } = await window.supabase.from('hijin_ratings').select('rating').eq('cartId', selectedCart.id);
-        if (cloudRatings && cloudRatings.length > 0) {
-          const sum = cloudRatings.reduce((acc, curr) => acc + (curr.rating || 0), 0);
-          const count = cloudRatings.length;
-          const newAvg = parseFloat((sum / count).toFixed(1));
-          
-          await window.supabase.from('hijin_vendors').update({ avgRating: newAvg, totalRatings: count }).eq('id', selectedCart.id);
-          selectedCart.avgRating = newAvg;
-          selectedCart.totalRatings = count;
-        }
-      } else {
-        const ratings = JSON.parse(localStorage.getItem('hijin_ratings') || '[]');
-        ratings.push(newReview);
-        localStorage.setItem('hijin_ratings', JSON.stringify(ratings));
+      const ratings = JSON.parse(localStorage.getItem('hijin_ratings') || '[]');
+      ratings.push(newReview);
+      localStorage.setItem('hijin_ratings', JSON.stringify(ratings));
 
-        const cartRatings = ratings.filter(r => r.cartId === selectedCart.id);
-        const sum = cartRatings.reduce((acc, curr) => acc + (curr.rating || curr.stars || 0), 0);
-        const count = cartRatings.length;
-        const newAvg = count > 0 ? parseFloat((sum / count).toFixed(1)) : 0;
-        const newTotal = count;
+      const cartRatings = ratings.filter(r => r.cartId === selectedCart.id);
+      const sum = cartRatings.reduce((acc, curr) => acc + (curr.rating || curr.stars || 0), 0);
+      const count = cartRatings.length;
+      const newAvg = count > 0 ? parseFloat((sum / count).toFixed(1)) : 0;
+      const newTotal = count;
 
-        let carts = JSON.parse(localStorage.getItem('hijin_carts') || '[]');
-        const cartIdx = carts.findIndex(c => c.id === selectedCart.id);
-        if (cartIdx !== -1) {
-          carts[cartIdx].avgRating = newAvg;
-          carts[cartIdx].totalRatings = newTotal;
-          localStorage.setItem('hijin_carts', JSON.stringify(carts));
-        }
-
-        selectedCart.avgRating = newAvg;
-        selectedCart.totalRatings = newTotal;
+      let carts = JSON.parse(localStorage.getItem('hijin_carts') || '[]');
+      const cartIdx = carts.findIndex(c => c.id === selectedCart.id);
+      if (cartIdx !== -1) {
+        carts[cartIdx].avgRating = newAvg;
+        carts[cartIdx].totalRatings = newTotal;
+        localStorage.setItem('hijin_carts', JSON.stringify(carts));
       }
+
+      selectedCart.avgRating = newAvg;
+      selectedCart.totalRatings = newTotal;
 
       const formArea = document.getElementById('cart-detail-review-form-area');
       if (formArea) {
@@ -2445,28 +2414,25 @@
       renderHomePanelResultsOnly();
     };
 
-    async function renderCustomerFeedback() {
+    function renderCustomerFeedback() {
       const panel = document.getElementById('customer-panel-feedback');
       if (!panel) return;
 
       const session = JSON.parse(localStorage.getItem('hijin_session') || 'null');
       if (!session || session.role !== 'customer') return;
 
-      let ratings = [];
-      if (window.supabase) {
-        const { data } = await window.supabase.from('hijin_ratings').select('*').eq('customerId', session.userId).order('createdAt', { ascending: false });
-        if (data) ratings = data;
-      } else {
-        const cached = JSON.parse(localStorage.getItem('hijin_ratings') || '[]');
-        ratings = cached.filter(r => r.customerId === session.userId).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      }
+      const ratings = JSON.parse(localStorage.getItem('hijin_ratings') || '[]');
+      const carts = JSON.parse(localStorage.getItem('hijin_carts') || '[]');
+
+      const myRatings = ratings.filter(r => r.customerId === session.userId);
+      myRatings.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
       let html = `
-<h2 style="font-size: 18px; font-weight: 700; margin-bottom: 4px; color: #222;">My Reviews</h2>
+        <h2 style="font-size: 18px; font-weight: 700; margin-bottom: 4px; color: #222;">My Reviews</h2>
         <p style="font-size: 13px; color: #666; margin-bottom: 16px;">All the food carts you've rated</p>
       `;
 
-      if (ratings.length === 0) {
+      if (myRatings.length === 0) {
         html += `
           <div style="text-align: center; padding: 48px 16px; background: white; border-radius: 12px; border: 1px solid #e0e0e0; margin-top: 16px;">
             <div style="font-size: 32px; margin-bottom: 12px;">🍽️</div>
@@ -2475,9 +2441,7 @@
           </div>
         `;
       } else {
-        // Ingestion Matrix: Sync cache arrays safely for display continuity
-        const carts = JSON.parse(localStorage.getItem('hijin_carts') || '[]');
-        ratings.forEach(r => {
+        myRatings.forEach(r => {
           const cart = carts.find(c => c.id === r.cartId);
           const cartName = cart ? (cart.name || cart.businessName) : "Food Cart";
           const ratingVal = r.rating || r.stars || 5;
@@ -2503,21 +2467,15 @@
       panel.innerHTML = html;
     }
 
-    async function renderVendorFeedback() {
+    function renderVendorFeedback() {
       const panel = document.getElementById('vendor-panel-feedback');
       if (!panel) return;
 
       const session = JSON.parse(localStorage.getItem('hijin_session') || 'null');
       if (!session || session.role !== 'vendor') return;
 
-      let vendor = null;
-      if (window.supabase) {
-        const { data } = await window.supabase.from('hijin_vendors').select('*').eq('userId', session.userId).maybeSingle();
-        vendor = data;
-      } else {
-        const vendors = JSON.parse(localStorage.getItem('hijin_vendors') || '[]');
-        vendor = vendors.find(v => String(v.userId) === String(session.userId));
-      }
+      const vendors = JSON.parse(localStorage.getItem('hijin_vendors') || '[]');
+      const vendor = vendors.find(v => String(v.userId) === String(session.userId));
 
       if (!vendor) {
         panel.innerHTML = `<div style="text-align: center; color: #666; padding: 24px 0;">Vendor profile not found.</div>`;
@@ -2534,18 +2492,20 @@
         return;
       }
 
-      let cartReviews = [];
-      const avgVal = vendor.avgRating || 4.5;
-      const totalRatings = vendor.totalRatings || 0;
-      
-      if (window.supabase) {
-        const { data } = await window.supabase.from('hijin_ratings').select('*').eq('cartId', vendor.id).order('createdAt', { ascending: false });
-        if (data) cartReviews = data;
-      } else {
-        const ratings = JSON.parse(localStorage.getItem('hijin_ratings') || '[]');
-        cartReviews = ratings.filter(r => String(r.cartId) === String(vendor.id)).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      const carts = JSON.parse(localStorage.getItem('hijin_carts') || '[]');
+      const cart = carts.find(c => String(c.vendorId) === String(session.userId));
+
+      if (!cart) {
+        panel.innerHTML = `<div style="text-align: center; color: #666; padding: 24px 0;">Cart data not found. Please contact Hi Jin support.</div>`;
+        return;
       }
 
+      const ratings = JSON.parse(localStorage.getItem('hijin_ratings') || '[]');
+      const cartReviews = ratings.filter(r => r.cartId === cart.id);
+      cartReviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      const avgVal = cart.avgRating || 0;
+      const totalRatings = cart.totalRatings || 0;
       const roundedAvg = Math.round(avgVal);
       let avgStarsStr = '';
       for (let i = 0; i < roundedAvg; i++) avgStarsStr += '★';
@@ -2560,7 +2520,7 @@
           <span style="font-size: 13px; color: #666; display: block; margin-bottom: 6px; font-weight: 500;">Your Cart Rating</span>
           <div style="display: flex; align-items: center; gap: 8px;">
             <span style="font-size: 24px; color: #ea0001;">${avgStarsStr}</span>
-            <span style="font-size: 24px; font-weight: 700; color: #222;">${Number(avgVal).toFixed(1)}</span>
+            <span style="font-size: 24px; font-weight: 700; color: #222;">${avgVal.toFixed(1)}</span>
             <span style="font-size: 13px; color: #666; font-weight: 500;">(${totalRatings} total reviews)</span>
           </div>
       `;
@@ -2588,7 +2548,7 @@
           const ratingVal = r.rating || r.stars || 5;
           let starsStr = '';
           for (let i = 0; i < ratingVal; i++) starsStr += '★';
-for (let i = ratingVal; i < 5; i++) starsStr += '☆';
+          for (let i = ratingVal; i < 5; i++) starsStr += '☆';
           
           const dateStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recently';
 
@@ -2646,10 +2606,19 @@ for (let i = ratingVal; i < 5; i++) starsStr += '☆';
       `;
     }
 
-    // Dynamic Cloud Voucher Adjustment Engine
-    window.redeemCouponCustomValue = async function(couponId) {
+    window.redeemCouponCustomValue = function(couponId) {
       const session = JSON.parse(localStorage.getItem('hijin_session') || 'null');
       if (!session) return;
+
+      const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
+      const userIdx = users.findIndex(u => u.id === session.userId);
+      if (userIdx === -1) return;
+      const currentUser = users[userIdx];
+
+      const coupons = JSON.parse(localStorage.getItem('hijin_coupons') || '[]');
+      const couponIdx = coupons.findIndex(c => c.id === couponId);
+      if (couponIdx === -1) return;
+      const coupon = coupons[couponIdx];
 
       const input = document.getElementById(`redeem-amt-input-${couponId}`);
       const itemMsgArea = document.getElementById(`coupon-item-msg-${couponId}`);
@@ -2663,108 +2632,70 @@ for (let i = ratingVal; i < 5; i++) starsStr += '☆';
         return;
       }
 
-      let coupon = null;
-      if (window.supabase) {
-        const { data } = await window.supabase.from('hijin_coupons').select('*').eq('id', couponId).maybeSingle();
-        coupon = data;
-      } else {
-        const coupons = JSON.parse(localStorage.getItem('hijin_coupons') || '[]');
-        coupon = coupons.find(c => c.id === couponId);
-      }
-
-      if (!coupon) return;
       const limit = parseFloat(coupon.value);
       if (amountToRedeem > limit) {
         itemMsgArea.innerHTML = `<span style="color: #ea0001; font-weight:600;">Max redeemable amount is ₹${limit.toFixed(2)}.</span>`;
         return;
       }
 
-      const nextRemainingValue = parseFloat((limit - amountToRedeem).toFixed(2));
-      const fullyRedeemed = nextRemainingValue <= 0.005;
+      if (currentUser.walletBalance === undefined) {
+        currentUser.walletBalance = 0;
+      }
+      currentUser.walletBalance = parseFloat((currentUser.walletBalance + amountToRedeem).toFixed(2));
+      users[userIdx] = currentUser;
+      localStorage.setItem('hijin_users', JSON.stringify(users));
 
-      if (window.supabase) {
-        const updatePayload = {
-          value: fullyRedeemed ? 0 : nextRemainingValue,
-          status: fullyRedeemed ? 'redeemed' : 'active',
-          client_email: session.email
-        };
-        await window.supabase.from('hijin_coupons').update(updatePayload).eq('id', couponId);
-        
-        // Post tracking entry
-        await window.supabase.from('hijin_wallet_txns').insert([{
-          id: Date.now(),
-          userId: session.userId,
-          type: "credit",
-          amount: amountToRedeem,
-          description: fullyRedeemed 
-            ? `Fully redeemed ₹${amountToRedeem.toFixed(2)} from coupon ${coupon.code || coupon.barcode_string}`
-            : `Partially redeemed ₹${amountToRedeem.toFixed(2)} from coupon ${coupon.code || coupon.barcode_string}`,
-          timestamp: new Date().toISOString()
-        }]);
-      } else {
-        const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
-        const userIdx = users.findIndex(u => String(u.id) === String(session.userId));
-        if (userIdx !== -1) {
-          users[userIdx].walletBalance = parseFloat(((users[userIdx].walletBalance || 0) + amountToRedeem).toFixed(2));
-          localStorage.setItem('hijin_users', JSON.stringify(users));
-        }
-
-        const coupons = JSON.parse(localStorage.getItem('hijin_coupons') || '[]');
-        const cIdx = coupons.findIndex(c => c.id === couponId);
-        if (cIdx !== -1) {
-          coupons[cIdx].value = fullyRedeemed ? 0 : nextRemainingValue;
-          if (fullyRedeemed) {
-            coupons[cIdx].isRedeemed = true;
-            coupons[cIdx].redeemedBy = session.email;
-            coupons[cIdx].redeemedAt = new Date().toISOString();
-          }
-          localStorage.setItem('hijin_coupons', JSON.stringify(coupons));
-        }
-
-        const txns = JSON.parse(localStorage.getItem('hijin_wallet_txns') || '[]');
-        txns.push({
-          id: Date.now(),
-          userId: session.userId,
-          type: "credit",
-          amount: amountToRedeem,
-          description: fullyRedeemed ? `Fully redeemed from coupon` : `Partially redeemed from coupon`,
-          timestamp: new Date().toISOString()
-        });
-        localStorage.setItem('hijin_wallet_txns', JSON.stringify(txns));
+      coupon.value = parseFloat((coupon.value - amountToRedeem).toFixed(2));
+      const fullyRedeemed = coupon.value <= 0.005; // avoid floating point issues
+      if (fullyRedeemed) {
+        coupon.value = 0;
+        coupon.isRedeemed = true;
+        coupon.redeemedBy = currentUser.email;
+        coupon.redeemedAt = new Date().toISOString();
       }
 
-      await renderCustomerWallet();
+      coupons[couponIdx] = coupon;
+      localStorage.setItem('hijin_coupons', JSON.stringify(coupons));
+
+      const txns = JSON.parse(localStorage.getItem('hijin_wallet_txns') || '[]');
+      txns.push({
+        id: Date.now(),
+        userId: session.userId,
+        type: "credit",
+        amount: amountToRedeem,
+        description: fullyRedeemed 
+          ? `Fully redeemed ₹${amountToRedeem.toFixed(2)} from coupon ${coupon.code}`
+          : `Partially redeemed ₹${amountToRedeem.toFixed(2)} from coupon ${coupon.code}`,
+        timestamp: new Date().toISOString()
+      });
+      localStorage.setItem('hijin_wallet_txns', JSON.stringify(txns));
+
+      renderCustomerWallet();
       const mainMsgArea = document.getElementById('coupon-msg-area');
       if (mainMsgArea) {
-        mainMsgArea.innerHTML = `<span style="color: #059669; font-weight: 700;">🎉 Successfully redeemed ₹${amountToRedeem.toFixed(2)}!</span>`;
+        mainMsgArea.innerHTML = `<span style="color: #059669; font-weight: 700;">🎉 Successfully redeemed ₹${amountToRedeem.toFixed(2)} from coupon ${coupon.code}!</span>`;
       }
     };
 
-    async function renderCustomerWallet() {
+    function renderCustomerWallet() {
       const panel = document.getElementById('customer-panel-wallet');
       if (!panel) return;
 
       const session = JSON.parse(localStorage.getItem('hijin_session') || 'null');
       if (!session || session.role !== 'customer') return;
 
-      let dynamicAggregatedBalance = 0;
-      let myTxns = [];
+      const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
+      const userIdx = users.findIndex(u => u.id === session.userId);
+      if (userIdx === -1) return;
+      const currentUser = users[userIdx];
 
-      if (window.supabase) {
-        // Core Wallet Balance Mismatch Fix: Sum active database vouchers
-        const { data: coupons } = await window.supabase.from('hijin_coupons').select('value').eq('user_id', session.userId).eq('status', 'active');
-        if (coupons) {
-          dynamicAggregatedBalance = coupons.reduce((sum, c) => sum + parseFloat(c.value || 0), 0);
-        }
-        const { data: txns } = await window.supabase.from('hijin_wallet_txns').select('*').eq('userId', session.userId).order('timestamp', { ascending: false });
-        if (txns) myTxns = txns;
-      } else {
-        const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
-        const user = users.find(u => String(u.id) === String(session.userId));
-        dynamicAggregatedBalance = user ? (user.walletBalance || 0) : 0;
-        const txns = JSON.parse(localStorage.getItem('hijin_wallet_txns') || '[]');
-        myTxns = txns.filter(t => t.userId === session.userId).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      if (currentUser.walletBalance === undefined) {
+        currentUser.walletBalance = 0;
       }
+
+      const txns = JSON.parse(localStorage.getItem('hijin_wallet_txns') || '[]');
+      const myTxns = txns.filter(t => t.userId === session.userId);
+      myTxns.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
       let txnsHtml = '';
       if (myTxns.length === 0) {
@@ -2777,7 +2708,7 @@ for (let i = ratingVal; i < 5; i++) starsStr += '☆';
         `;
       } else {
         myTxns.forEach(t => {
-const isCredit = t.type === 'credit';
+          const isCredit = t.type === 'credit';
           const badgeBg = isCredit ? '#d1fae5' : '#fee2e2';
           const badgeColor = isCredit ? '#065f46' : '#991b1b';
           const badgeText = isCredit ? 'Credit' : 'Debit';
@@ -2797,17 +2728,9 @@ const isCredit = t.type === 'credit';
         });
       }
 
-      // Filter all active coupons designed for the current user -> Upgraded to Supabase
-      let myCoupons = [];
-      if (window.supabase) {
-        const { data } = await window.supabase.from('hijin_coupons').select('*').eq('user_id', session.userId).eq('status', 'active');
-        if (data) myCoupons = data;
-      } else {
-        const coupons = JSON.parse(localStorage.getItem('hijin_coupons') || '[]');
-        const cachedUsers = JSON.parse(localStorage.getItem('hijin_users') || '[]');
-        const localUser = cachedUsers.find(u => String(u.id) === String(session.userId)) || {};
-        myCoupons = coupons.filter(c => !c.isRedeemed && (c.assignedTo === 'all' || (localUser.email && c.assignedTo.toLowerCase() === localUser.email.toLowerCase())));
-      }
+      // Filter all active coupons designed for the current user
+      const coupons = JSON.parse(localStorage.getItem('hijin_coupons') || '[]');
+      const myCoupons = coupons.filter(c => !c.isRedeemed && (c.assignedTo === 'all' || (currentUser.email && c.assignedTo.toLowerCase() === currentUser.email.toLowerCase())));
       const couponCount = myCoupons.length;
 
       let couponsListHtml = '';
@@ -2821,16 +2744,15 @@ const isCredit = t.type === 'credit';
         `;
       } else {
         myCoupons.forEach(c => {
-          const couponCodeString = c.code || c.barcode_string || "HIJIN";
-          const barcodeSvg = generateBarcodeSvg(couponCodeString);
+          const barcodeSvg = generateBarcodeSvg(c.code);
           const limit = parseFloat(c.value).toFixed(2);
           
           couponsListHtml += `
             <div style="background: white; border: 1.5px dashed #ea0001; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 12px; position: relative;">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
                 <div>
-                  <span style="font-size: 11px; background: #fee2e2; color: #ea0001; padding: 3px 8px; border-radius: 6px; font-weight: 700; text-transform: uppercase; font-family: var(--font-mono, monospace);">${escapeHtml(couponCodeString)}</span>
-                  <div style="font-size: 12px; color: #666; margin-top: 6px; font-weight: 500;">Scope: ${escapeHtml(c.assignedTo || 'Assigned to you')}</div>
+                  <span style="font-size: 11px; background: #fee2e2; color: #ea0001; padding: 3px 8px; border-radius: 6px; font-weight: 700; text-transform: uppercase; font-family: var(--font-mono, monospace);">${escapeHtml(c.code)}</span>
+                  <div style="font-size: 12px; color: #666; margin-top: 6px; font-weight: 500;">Scope: ${escapeHtml(c.assignedTo === 'all' ? 'All Users' : 'Assigned to you')}</div>
                 </div>
                 <div style="text-align: right; flex-shrink: 0;">
                   <span style="font-size: 11px; color: #888; font-weight: 600; display: block; text-transform: uppercase; letter-spacing: 0.5px;">Remaining Value</span>
@@ -2841,7 +2763,7 @@ const isCredit = t.type === 'credit';
               <!-- Barcode Graphic -->
               <div style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);">
                 <div style="width: 100%; display: flex; justify-content: center;">${barcodeSvg}</div>
-                <div style="font-family: var(--font-mono, monospace); font-size: 10px; color: #444; letter-spacing: 4px; font-weight: 700; text-transform: uppercase; margin-top: 4px; border-top: 1px solid #f0f0f0; width: 100%; text-align: center; padding-top: 4px;">*${escapeHtml(couponCodeString)}*</div>
+                <div style="font-family: var(--font-mono, monospace); font-size: 10px; color: #444; letter-spacing: 4px; font-weight: 700; text-transform: uppercase; margin-top: 4px; border-top: 1px solid #f0f0f0; width: 100%; text-align: center; padding-top: 4px;">*${escapeHtml(c.code)}*</div>
               </div>
 
               <!-- Redeem Inputs & Actions -->
@@ -2861,21 +2783,16 @@ const isCredit = t.type === 'credit';
         });
       }
 
-      // Fetch fallback name data safely
-      const cachedUsers = JSON.parse(localStorage.getItem('hijin_users') || '[]');
-      const localUser = cachedUsers.find(u => String(u.id) === String(session.userId)) || {};
-      const profileDisplayName = localUser.name || "Customer";
-
       panel.innerHTML = `
         <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 4px; color: #222;">My Wallet</h2>
         <p style="font-size: 13px; color: #666; margin-bottom: 16px;">Manage your balance, add funds, or redeem coupon codes securely</p>
 
-        <!-- Wallet Card (Unified Fixed Balance Output Engine) -->
+        <!-- Wallet Card -->
         <div style="background:#ea0001; border-radius:16px; padding:24px; color:white; margin-bottom:24px; position:relative; box-shadow: 0 4px 12px rgba(234, 0, 1, 0.2);">
           <div style="font-size: 11px; letter-spacing:1.5px; opacity:0.85; font-weight: 700;">HI JIN WALLET</div>
-          <div style="font-size: 36px; font-weight:700; margin:8px 0;">₹${parseFloat(dynamicAggregatedBalance).toFixed(2)}</div>
+          <div style="font-size: 36px; font-weight:700; margin:8px 0;">₹${parseFloat(currentUser.walletBalance || 0).toFixed(2)}</div>
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div style="font-size: 12px; letter-spacing:1px; opacity:0.8; font-weight: 600;">${escapeHtml(profileDisplayName).toUpperCase()}</div>
+            <div style="font-size: 12px; letter-spacing:1px; opacity:0.8; font-weight: 600;">${escapeHtml(currentUser.name || "Customer").toUpperCase()}</div>
             <div style="font-size: 11px; background: rgba(255,255,255,0.25); color: white; padding: 2px 8px; border-radius: 12px; font-weight: 700;">🎟️ ${couponCount} COUPON${couponCount === 1 ? '' : 'S'}</div>
           </div>
         </div>
@@ -2890,7 +2807,8 @@ const isCredit = t.type === 'credit';
             ${couponsListHtml}
           </div>
         </div>
-<!-- Redeem Coupon Card (Manual Code Entry) -->
+
+        <!-- Redeem Coupon Card (Manual Code Entry) -->
         <div style="background:white; border:1px solid #e0e0e0; border-radius:12px; padding:20px; margin-bottom:24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
           <div style="font-size: 15px; font-weight:700; margin-bottom:12px; color: #222;">Redeem via Manual Code</div>
           <div style="display:flex; gap:8px;">
@@ -2910,44 +2828,35 @@ const isCredit = t.type === 'credit';
       `;
     }
 
-    window.topUpWallet = async function(amount) {
+    window.topUpWallet = function(amount) {
       const session = JSON.parse(localStorage.getItem('hijin_session') || 'null');
       if (!session) return;
 
-      if (window.supabase) {
-        await window.supabase.from('hijin_wallet_txns').insert([{
-          id: Date.now(),
-          userId: session.userId,
-          type: "credit",
-          amount: amount,
-          description: "Wallet top-up",
-          timestamp: new Date().toISOString()
-        }]);
-      } else {
-        const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
-        const userIdx = users.findIndex(u => String(u.id) === String(session.userId));
-        if (userIdx !== -1) {
-          if (users[userIdx].walletBalance === undefined) users[userIdx].walletBalance = 0;
-          users[userIdx].walletBalance += amount;
-          localStorage.setItem('hijin_users', JSON.stringify(users));
-        }
+      const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
+      const userIdx = users.findIndex(u => u.id === session.userId);
+      if (userIdx === -1) return;
 
-        const txns = JSON.parse(localStorage.getItem('hijin_wallet_txns') || '[]');
-        txns.push({
-          id: Date.now(),
-          userId: session.userId,
-          type: "credit",
-          amount: amount,
-          description: "Wallet top-up",
-          timestamp: new Date().toISOString()
-        });
-        localStorage.setItem('hijin_wallet_txns', JSON.stringify(txns));
+      if (users[userIdx].walletBalance === undefined) {
+        users[userIdx].walletBalance = 0;
       }
+      users[userIdx].walletBalance += amount;
+      localStorage.setItem('hijin_users', JSON.stringify(users));
+
+      const txns = JSON.parse(localStorage.getItem('hijin_wallet_txns') || '[]');
+      txns.push({
+        id: Date.now(),
+        userId: session.userId,
+        type: "credit",
+        amount: amount,
+        description: "Wallet top-up",
+        timestamp: new Date().toISOString()
+      });
+      localStorage.setItem('hijin_wallet_txns', JSON.stringify(txns));
 
       renderCustomerWallet();
     };
 
-    window.redeemCouponCode = async function() {
+    window.redeemCouponCode = function() {
       const input = document.getElementById('coupon-code-input');
       const msgArea = document.getElementById('coupon-msg-area');
       if (!input || !msgArea) return;
@@ -2963,75 +2872,57 @@ const isCredit = t.type === 'credit';
       const session = JSON.parse(localStorage.getItem('hijin_session') || 'null');
       if (!session) return;
 
-      let coupon = null;
-      if (window.supabase) {
-        const { data } = await window.supabase.from('hijin_coupons').select('*').eq('barcode_string', code).maybeSingle();
-        coupon = data;
-      } else {
-        const coupons = JSON.parse(localStorage.getItem('hijin_coupons') || '[]');
-        coupon = coupons.find(c => c.code === code);
-      }
+      const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
+      const userIdx = users.findIndex(u => u.id === session.userId);
+      if (userIdx === -1) return;
+      const currentUser = users[userIdx];
 
-      if (!coupon) {
+      const coupons = JSON.parse(localStorage.getItem('hijin_coupons') || '[]');
+      const couponIdx = coupons.findIndex(c => c.code === code);
+
+      if (couponIdx === -1) {
         msgArea.innerHTML = '<span style="color: #ea0001;">Invalid coupon code. Please check and try again.</span>';
         return;
       }
 
-      const isCouponRedeemed = window.supabase ? (coupon.status === 'redeemed') : coupon.isRedeemed;
-      if (isCouponRedeemed) {
+      const coupon = coupons[couponIdx];
+
+      if (coupon.isRedeemed) {
         msgArea.innerHTML = '<span style="color: #ea0001;">This coupon has already been used.</span>';
         return;
       }
 
-      if (coupon.assignedTo && coupon.assignedTo !== "all" && coupon.assignedTo !== session.email) {
+      if (coupon.assignedTo !== "all" && coupon.assignedTo !== currentUser.email) {
         msgArea.innerHTML = '<span style="color: #ea0001;">This coupon is not assigned to your account.</span>';
         return;
       }
 
-      const couponValue = parseFloat(coupon.value || 0);
+      if (currentUser.walletBalance === undefined) {
+        currentUser.walletBalance = 0;
+      }
+      currentUser.walletBalance += coupon.value;
+      users[userIdx] = currentUser;
+      localStorage.setItem('hijin_users', JSON.stringify(users));
 
-      if (window.supabase) {
-        // Safe mapping to balance matrix table keys natively
-        await window.supabase.from('hijin_coupons').update({ status: 'redeemed', client_email: session.email }).eq('id', coupon.id);
-        await window.supabase.from('hijin_wallet_txns').insert([{
-          id: Date.now(),
-          userId: session.userId,
-          type: "credit",
-          amount: couponValue,
-          description: `Fully redeemed coupon ${code}`,
-          timestamp: new Date().toISOString()
-        }]);
-      } else {
-        const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
-        const userIdx = users.findIndex(u => String(u.id) === String(session.userId));
-        if (userIdx !== -1) {
-          if (users[userIdx].walletBalance === undefined) users[userIdx].walletBalance = 0;
-          users[userIdx].walletBalance += couponValue;
-          localStorage.setItem('hijin_users', JSON.stringify(users));
-        }
+      coupon.isRedeemed = true;
+      coupon.redeemedBy = currentUser.email;
+      coupon.redeemedAt = new Date().toISOString();
+      coupons[couponIdx] = coupon;
+      localStorage.setItem('hijin_coupons', JSON.stringify(coupons));
 
-        const coupons = JSON.parse(localStorage.getItem('hijin_coupons') || '[]');
-        const cIdx = coupons.findIndex(c => c.id === coupon.id);
-        if (cIdx !== -1) {
-          coupons[cIdx].isRedeemed = true;
-          coupons[cIdx].redeemedBy = session.email;
-          coupons[cIdx].redeemedAt = new Date().toISOString();
-          localStorage.setItem('hijin_coupons', JSON.stringify(coupons));
-        }
-
-        const txns = JSON.parse(localStorage.getItem('hijin_wallet_txns') || '[]');
-        txns.push({
-          id: Date.now(),
+      const txns = JSON.parse(localStorage.getItem('hijin_wallet_txns') || '[]');
+      txns.push({
+        id: Date.now(),
         userId: session.userId,
         type: "credit",
-        amount: couponValue,
-        description: "Coupon " + code + " redeemed",
+        amount: coupon.value,
+        description: "Coupon " + coupon.code + " redeemed",
         timestamp: new Date().toISOString()
       });
       localStorage.setItem('hijin_wallet_txns', JSON.stringify(txns));
 
       input.value = '';
-      renderCustomerWalletPreservingMsg(`🎉 ₹${couponValue} added to your Hi Jin Wallet!`);
+      renderCustomerWalletPreservingMsg(`🎉 ₹${coupon.value} added to your Hi Jin Wallet!`);
     };
 
     function renderCustomerWalletPreservingMsg(successMsg) {
@@ -3042,22 +2933,15 @@ const isCredit = t.type === 'credit';
       }
     }
 
-    // Vendor Coupons Panel Engine -> Upgraded to inject camera interface layout securely
-    async function renderVendorCoupons() {
+    function renderVendorCoupons() {
       const panel = document.getElementById('vendor-panel-coupons');
       if (!panel) return;
 
       const session = JSON.parse(localStorage.getItem('hijin_session') || 'null');
       if (!session || session.role !== 'vendor') return;
 
-      let vendor = null;
-      if (window.supabase) {
-        const { data } = await window.supabase.from('hijin_vendors').select('*').eq('userId', session.userId).maybeSingle();
-        vendor = data;
-      } else {
-        const vendors = JSON.parse(localStorage.getItem('hijin_vendors') || '[]');
-        vendor = vendors.find(v => String(v.userId) === String(session.userId));
-      }
+      const vendors = JSON.parse(localStorage.getItem('hijin_vendors') || '[]');
+      const vendor = vendors.find(v => String(v.userId) === String(session.userId));
 
       if (!vendor) {
         panel.innerHTML = `<div style="text-align: center; color: #666; padding: 24px 0;">Vendor profile not found.</div>`;
@@ -3074,22 +2958,21 @@ const isCredit = t.type === 'credit';
         return;
       }
 
-      // Fetch dynamic verification coupon list records -> Upgraded to Supabase
-      let redeemedCoupons = [];
-      if (window.supabase) {
-        const { data } = await window.supabase.from('hijin_coupons').select('*').eq('status', 'redeemed').order('id', { ascending: false });
-        if (data) redeemedCoupons = data;
-      } else {
-        const coupons = JSON.parse(localStorage.getItem('hijin_coupons') || '[]');
-        redeemedCoupons = coupons.filter(c => c.isRedeemed === true || c.status === 'redeemed');
-        redeemedCoupons.sort((a, b) => new Date(b.redeemedAt || 0) - new Date(a.redeemedAt || 0));
-      }
+      const carts = JSON.parse(localStorage.getItem('hijin_carts') || '[]');
+      const vendorCart = carts.find(c => String(c.vendorId) === String(session.userId));
+
+      const coupons = JSON.parse(localStorage.getItem('hijin_coupons') || '[]');
+      const cartIdVal = vendorCart ? vendorCart.id : null;
+      const redeemedCoupons = coupons.filter(c => {
+        return c.isRedeemed === true && (c.cartId === "any" || (cartIdVal && c.cartId === cartIdVal));
+      });
+      redeemedCoupons.sort((a, b) => new Date(b.redeemedAt) - new Date(a.redeemedAt));
 
       let historyHtml = '';
       if (redeemedCoupons.length === 0) {
         historyHtml = `
-          <div class="empty-state" style="border: 1px solid #e0e0e0; border-radius: 12px; background: white; padding: 40px 16px; text-align: center; color: var(--muted);">
-            <span class="emoji" style="font-size: 40px; display: block; margin-bottom: 12px;">🎟️</span>
+          <div class="empty-state" style="border: 1px solid #e0e0e0; border-radius: 12px; background: white;">
+            <span class="emoji">🎟️</span>
             No coupons have been redeemed at your cart yet.
           </div>
         `;
@@ -3097,20 +2980,19 @@ const isCredit = t.type === 'credit';
         let rowsHtml = '';
         redeemedCoupons.forEach((c, idx) => {
           const bg = idx % 2 === 0 ? 'white' : '#fafafa';
-          const formattedDate = formatWalletTimestamp(c.redeemedAt || new Date().toISOString());
-          const couponCodeString = c.code || c.barcode_string || "HIJIN";
+          const formattedDate = formatWalletTimestamp(c.redeemedAt);
           rowsHtml += `
             <tr style="background: ${bg}; border-bottom: 1px solid #f0f0f0;">
-              <td style="padding: 10px 12px; font-weight: 600; color: #222;">${escapeHtml(couponCodeString)}</td>
+              <td style="padding: 10px 12px; font-weight: 600; color: #222;">${escapeHtml(c.code)}</td>
               <td style="padding: 10px 12px; font-weight: 700; color: #059669;">₹${parseFloat(c.value || 0).toFixed(2)}</td>
-              <td style="padding: 10px 12px; color: #555;">${escapeHtml(c.client_email || c.redeemedBy || "Customer")}</td>
+              <td style="padding: 10px 12px; color: #555;">${escapeHtml(c.redeemedBy || "N/A")}</td>
               <td style="padding: 10px 12px; color: #666;">${escapeHtml(formattedDate)}</td>
             </tr>
           `;
         });
 
         historyHtml = `
-          <div style="overflow-x: auto; border: 1px solid #e0e0e0; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-top: 16px;">
+          <div style="overflow-x: auto; border: 1px solid #e0e0e0; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
             <table style="width:100%; border-collapse:collapse; font-size:13px; text-align: left;">
               <thead>
                 <tr style="background: #ea0001; color: white;">
@@ -3122,34 +3004,6 @@ const isCredit = t.type === 'credit';
               </thead>
               <tbody>
                 ${rowsHtml}
-              </tbody>
-            </table>
-          </div>
-        `;
-      }
-
-      // CRITICAL FIX: Inject the missing dynamic Cam Scanner layout framework right inside panel
-      panel.innerHTML = `
-        <div style="margin-bottom: 24px; padding: 20px; border: 1px solid #e0e0e0; border-radius: 12px; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
-          <h2 style="font-size: 18px; font-weight: 700; color: var(--text); margin: 0 0 4px 0;">Customer Coupon Validation Engine</h2>
-          <p style="font-size: 13px; color: var(--muted); margin: 0 0 16px 0;">Scan barcodes or verify customer coupon tokens instantaneously using your webcam hardware.</p>
-          
-          <button type="button" onclick="toggleOpticalHardwareScanner()" class="btn-primary" style="background: #111827; display: inline-flex; align-items: center; justify-content: center; gap: 8px; max-width: 260px; min-height: 44px;">
-            📷 Launch Live Optics Scanner
-          </button>
-
-          <!-- Optical Scanning Viewport Framework Box Context -->
-          <div id="live-camera-scanner-framework-modal" style="display: none; background: #fafafa; border: 1.5px dashed var(--primary); border-radius: 12px; padding: 16px; margin-top: 16px; position: relative;">
-            <div id="camera-hardware-viewscreen-canvas" style="width: 100%; max-width: 480px; margin: 0 auto; background: #000; border-radius: 8px; overflow: hidden;"></div>
-            <div id="camera-realtime-diagnostic-logs" style="font-size: 12px; margin-top: 8px; color: var(--primary); text-align: center; font-weight: 600;">Initialising optic device array matrix...</div>
-          </div>
-        </div>
-
-        <h3 style="font-size: 16px; font-weight: 700; color: #222; margin-top: 24px; margin-bottom: 12px;">Redemption Ledger Log History</h3>
-        ${historyHtml}
-      `;
-    }
-        ${rowsHtml}
               </tbody>
             </table>
           </div>
@@ -3185,12 +3039,12 @@ const isCredit = t.type === 'credit';
       `;
     }
 
-    window.verifyVendorCoupon = async function(scannedCodeString) {
+    window.verifyVendorCoupon = function() {
       const input = document.getElementById('verify-coupon-input');
       const resultArea = document.getElementById('verify-result-area');
-      if (!resultArea) return;
+      if (!input || !resultArea) return;
 
-      const code = (scannedCodeString || (input ? input.value.trim() : "")).toUpperCase();
+      const code = input.value.trim().toUpperCase();
       resultArea.innerHTML = '';
 
       if (!code) {
@@ -3198,105 +3052,65 @@ const isCredit = t.type === 'credit';
         return;
       }
 
-      if (input) input.value = code;
-
-      let coupon = null;
-      if (window.supabase) {
-        const { data } = await window.supabase.from('hijin_coupons').select('*').eq('barcode_string', code).maybeSingle();
-        coupon = data;
-      } else {
-        const coupons = JSON.parse(localStorage.getItem('hijin_coupons') || '[]');
-        coupon = coupons.find(c => c.code === code || c.barcode_string === code);
-      }
+      const coupons = JSON.parse(localStorage.getItem('hijin_coupons') || '[]');
+      const coupon = coupons.find(c => c.code === code);
 
       if (!coupon) {
         resultArea.innerHTML = '<div style="color: #ea0001; font-size: 13px; font-weight: 500; margin-top: 10px;">❌ Coupon code not found.</div>';
         return;
       }
 
-      const isCouponRedeemed = window.supabase ? (coupon.status === 'redeemed') : coupon.isRedeemed;
-      if (!isCouponRedeemed) {
+      if (coupon.isRedeemed === false) {
         resultArea.innerHTML = '<div style="color: #ea0001; font-size: 13px; font-weight: 500; margin-top: 10px; line-height: 1.4;">❌ This coupon has not been redeemed by the customer yet.<br>Ask them to redeem it in their Hi Jin Wallet first.</div>';
         return;
       }
 
-      const formattedRedeemedAt = formatWalletTimestamp(coupon.redeemedAt || new Date().toISOString());
+      const session = JSON.parse(localStorage.getItem('hijin_session') || 'null');
+      if (!session) return;
+
+      const carts = JSON.parse(localStorage.getItem('hijin_carts') || '[]');
+      const vendorCart = carts.find(c => c.vendorId === session.userId);
+
+      if (coupon.cartId !== "any" && (!vendorCart || coupon.cartId !== vendorCart.id)) {
+        resultArea.innerHTML = '<div style="color: #ea0001; font-size: 13px; font-weight: 500; margin-top: 10px;">❌ This coupon is not valid for your cart.</div>';
+        return;
+      }
+
+      const formattedRedeemedAt = formatWalletTimestamp(coupon.redeemedAt);
       resultArea.innerHTML = `
         <div style="background:#d1fae5; border:1px solid #6ee7b7; border-radius:10px; padding:14px; margin-top:10px; font-size: 13px;">
           <div style="font-weight:700; color:#065f46; font-size: 14px;">✅ Valid Coupon Redemption</div>
           <div style="margin-top:4px; font-weight: 600; color:#065f46;">Amount: ₹${parseFloat(coupon.value || 0).toFixed(2)}</div>
-          <div style="color:#065f46; margin-top: 2px;">Redeemed by: ${escapeHtml(coupon.client_email || coupon.redeemedBy || "Customer")}</div>
+          <div style="color:#065f46; margin-top: 2px;">Redeemed by: ${escapeHtml(coupon.redeemedBy || "")}</div>
           <div style="color:#555; margin-top: 2px;">Redeemed on: ${escapeHtml(formattedRedeemedAt)}</div>
         </div>
       `;
     };
 
-    // Camera Scan Action Linkage Engine
-    window.toggleOpticalHardwareScanner = function() {
-      const frameworkModal = document.getElementById('live-camera-scanner-framework-modal');
-      const realTimeLogs = document.getElementById('camera-realtime-diagnostic-logs');
-      if (!frameworkModal) return;
-
-      if (frameworkModal.style.display === 'none') {
-        frameworkModal.style.display = 'block';
-        realTimeLogs.textContent = "Booting camera matrix stream...";
-        
-        window.activeHardwareDecoderRef = new Html5Qrcode("camera-hardware-viewscreen-canvas");
-        window.activeHardwareDecoderRef.start(
-          { facingMode: "environment" },
-          { fps: 12, qrbox: { width: 250, height: 250 } },
-          async (decodedText) => {
-            realTimeLogs.textContent = `Token found: ${decodedText}. Verifying entries...`;
-            window.shutDownOpticalStream();
-            frameworkModal.style.display = 'none';
-            window.verifyVendorCoupon(decodedText);
-          },
-          (err) => { /* Suppress runtime canvas refresh ticks */ }
-        ).catch(err => {
-          realTimeLogs.textContent = `Hardware Exception: ${err}`;
-        });
-      } else {
-        window.shutDownOpticalStream();
-        frameworkModal.style.display = 'none';
-      }
-    };
-
-    window.shutDownOpticalStream = function() {
-      if (window.activeHardwareDecoderRef) {
-        window.activeHardwareDecoderRef.stop().then(() => { window.activeHardwareDecoderRef = null; }).catch(e => console.log(e));
-      }
-    };
-
-    window.openBarcodeScanner = async function() {
-      let coupons = [];
-      if (window.supabase) {
-        const { data } = await window.supabase.from('hijin_coupons').select('*').limit(20);
-        if (data) coupons = data;
-      } else {
-        coupons = JSON.parse(localStorage.getItem('hijin_coupons') || '[]');
-      }
+    window.openBarcodeScanner = function() {
+      // Query active coupons to show as simulator buttons
+      const coupons = JSON.parse(localStorage.getItem('hijin_coupons') || '[]');
       
       let simulationBadgesHtml = '';
       if (coupons.length === 0) {
         simulationBadgesHtml = `<span style="font-size:12px; color:#888;">No coupons found in system.</span>`;
       } else {
         coupons.forEach(c => {
-          const couponCodeString = c.code || c.barcode_string || "HIJIN";
-          const isCouponRedeemed = window.supabase ? (c.status === 'redeemed') : c.isRedeemed;
-          let statusLabel = isCouponRedeemed ? '🔴 Redeemed (Ready to Verify)' : '🟢 Active (Unredeemed)';
-          let badgeColor = isCouponRedeemed ? '#e6fbf1' : '#f3f4f6';
-          let borderStyle = isCouponRedeemed ? '1.5px solid #10b981' : '1px solid #d1d5db';
-          let textPrimary = isCouponRedeemed ? '#065f46' : '#374151';
+          let statusLabel = c.isRedeemed ? '🔴 Redeemed (Ready to Verify)' : '🟢 Active (Unredeemed)';
+          let badgeColor = c.isRedeemed ? '#e6fbf1' : '#f3f4f6';
+          let borderStyle = c.isRedeemed ? '1.5px solid #10b981' : '1px solid #d1d5db';
+          let textPrimary = c.isRedeemed ? '#065f46' : '#374151';
           
           simulationBadgesHtml += `
-            <button type="button" onclick="window.simulateBarcodeScan('${escapeHtml(couponCodeString)}')" style="background:${badgeColor}; border:${borderStyle}; color:${textPrimary}; padding:8px 12px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; text-align:left; display:flex; flex-direction:column; gap:2px; min-height:44px; transition: transform 0.1s; width: 100%; box-sizing: border-box;" onmouseover="this.style.opacity=0.9" onmouseout="this.style.opacity=1">
-              <span style="font-family: monospace; font-size: 13px;">${escapeHtml(couponCodeString)} (₹${parseFloat(c.value || 0).toFixed(2)})</span>
-              <span style="font-size:10px; color:${isCouponRedeemed ? '#059669' : '#6b7280'}; font-weight:700;">${statusLabel}</span>
+            <button type="button" onclick="window.simulateBarcodeScan('${escapeHtml(c.code)}')" style="background:${badgeColor}; border:${borderStyle}; color:${textPrimary}; padding:8px 12px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; text-align:left; display:flex; flex-direction:column; gap:2px; min-height:44px; transition: transform 0.1s; width: 100%; box-sizing: border-box;" onmouseover="this.style.opacity=0.9" onmouseout="this.style.opacity=1">
+              <span style="font-family: monospace; font-size: 13px;">${escapeHtml(c.code)} (₹${parseFloat(c.value || 0).toFixed(2)})</span>
+              <span style="font-size:10px; color:${c.isRedeemed ? '#059669' : '#6b7280'}; font-weight:700;">${statusLabel}</span>
             </button>
           `;
         });
       }
 
+      // Create modal container
       const modal = document.createElement('div');
       modal.id = 'hijin-barcode-scanner-modal';
       modal.style.position = 'fixed';
@@ -3305,7 +3119,7 @@ const isCredit = t.type === 'credit';
       modal.style.right = '0';
       modal.style.bottom = '0';
       modal.style.zIndex = '100000';
-      modal.style.background = 'rgba(15, 23, 42, 0.9)';
+      modal.style.background = 'rgba(15, 23, 42, 0.9)'; // Sleek deep charcoal slate backdrop
       modal.style.display = 'flex';
       modal.style.flexDirection = 'column';
       modal.style.alignItems = 'center';
@@ -3317,7 +3131,7 @@ const isCredit = t.type === 'credit';
         <div style="background: white; width: 100%; max-width: 440px; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); overflow: hidden; display: flex; flex-direction: column; max-height: 90vh;">
           
           <!-- Modal Header -->
-<div style="background: #1e293b; color: white; padding: 16px; display: flex; justify-content: space-between; align-items: center;">
+          <div style="background: #1e293b; color: white; padding: 16px; display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 20px;">🧞</span>
               <span style="font-weight: 700; font-size: 15px; letter-spacing: -0.3px;">Hi Jin Barcode Scanner</span>
@@ -3337,7 +3151,7 @@ const isCredit = t.type === 'credit';
               <!-- Static Viewfinder placeholder (Camera icon / Scanning sweep) -->
               <div id="scanner-placeholder" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #888; text-align: center; padding: 12px;">
                 <span style="font-size: 32px; filter: grayscale(1); opacity: 0.6;">📷</span>
-                <span id="camera-loading-status" style="font-size: 12px; color: #aaa; font-weight: 500;">Device hardware ready.</span>
+                <span id="camera-loading-status" style="font-size: 12px; color: #aaa; font-weight: 500;">Requesting camera permissions...</span>
               </div>
 
               <!-- Animated Laser Line Sweep -->
@@ -3411,6 +3225,7 @@ const isCredit = t.type === 'credit';
           statusIndicator.innerHTML = '🟢 HTML5 Barcode Detection API: Active';
         }
         try {
+          // Initialize detector with common formats
           barcodeDetectorInstance = new window.BarcodeDetector({
             formats: ['qr_code', 'ean_13', 'ean_8', 'code_128', 'code_39', 'code_93', 'codabar', 'upc_a', 'upc_e', 'itf', 'pdf417', 'data_matrix']
           });
@@ -3432,10 +3247,7 @@ const isCredit = t.type === 'credit';
         }
       }
 
-      window.closeBarcodeScanner = function() {
-        const el = document.getElementById('hijin_barcode_scanner_modal') || document.getElementById('hijin-barcode-scanner-modal');
-        if (el) el.remove();
-      };
+      // Try actual Web Camera if available (with fallback)
       let videoFeed = document.getElementById('scanner-video-feed');
       let placeholder = document.getElementById('scanner-placeholder');
       let statusLabel = document.getElementById('camera-loading-status');
@@ -3554,15 +3366,9 @@ const isCredit = t.type === 'credit';
             laser.style.boxShadow = '0 0 15px #10b981';
           }
 
-          // Trigger the operational verification pipeline seamlessly with the decoded code
-          setTimeout(() => {
-            window.closeBarcodeScanner();
-            window.verifyVendorCoupon(code);
-          }, 600);
-
-          // Play successful synth beep audio fallback context safely
+          // Play beautiful successful synth beep audio!
           try {
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             const playBeep = (freq, duration, delay) => {
               setTimeout(() => {
                 const osc = audioCtx.createOscillator();
@@ -3633,81 +3439,48 @@ const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       }
     }
 
-    // Dynamic Live Vendor Profile Ingestion Controller -> Upgraded to Supabase Core
-    async function loadVendorPanel() {
+    function loadVendorPanel() {
       const session = JSON.parse(localStorage.getItem('hijin_session') || 'null');
       if (!session || session.role !== 'vendor') return;
 
-      let vendor = null;
-      if (window.supabase) {
-        const { data } = await window.supabase.from('hijin_vendors').select('*').eq('userId', session.userId).maybeSingle();
-        vendor = data;
-        
-        if (!vendor) {
-          // Fallback generation pattern across missing tables natively
-          const { data: userObj } = await window.supabase.from('hijin_users').select('*').eq('id', session.userId).maybeSingle();
-          const fallbackVendor = {
-            id: String(Date.now()),
-            userId: session.userId,
-            ownerName: userObj ? userObj.name : "Hi Jin Owner",
-            email: userObj ? userObj.email : "owner@hijin.in",
-            phone: userObj ? userObj.phone : "9812345678",
-            businessName: "Hi Jin Food Cart",
-            city: "Ludhiana",
-            status: "pending",
-            gst: "",
-            fssai: "",
-            address: "",
-            pincode: "",
-            lat: 30.9010,
-            lng: 75.8573,
-            cartImageUrls: [],
-            description: "",
-            createdAt: new Date().toISOString()
-          };
-          
-          await window.supabase.from('hijin_vendors').insert([fallbackVendor]);
-          vendor = fallbackVendor;
-        }
-      } else {
-        const vendors = JSON.parse(localStorage.getItem('hijin_vendors') || '[]');
-        vendor = vendors.find(v => String(v.userId) === String(session.userId));
-        
-        if (!vendor) {
-          const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
-          const userObj = users.find(u => String(u.id) === String(session.userId)) || { name: 'Hi Jin Owner', email: 'owner@hijin.in', phone: '9812345678' };
-          vendor = {
-            id: Date.now(),
-            userId: session.userId,
-            ownerName: userObj.name || "Hi Jin Owner",
-            email: userObj.email || "owner@hijin.in",
-            phone: userObj.phone || "9812345678",
-            businessName: "Hi Jin Food Cart",
-            city: "Ludhiana",
-            status: "pending",
-            gst: "",
-            fssai: "",
-            address: "",
-            pincode: "",
-            lat: 30.9010,
-            lng: 75.8573,
-            cartImageUrls: [],
-            description: "",
-            createdAt: new Date().toISOString()
-          };
-          vendors.push(vendor);
-          localStorage.setItem('hijin_vendors', JSON.stringify(vendors));
-        }
+      const vendors = JSON.parse(localStorage.getItem('hijin_vendors') || '[]');
+      let vendor = vendors.find(v => String(v.userId) === String(session.userId));
+      
+      if (!vendor) {
+        const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
+        const userObj = users.find(u => String(u.id) === String(session.userId)) || { name: 'Hi Jin Owner', email: 'owner@hijin.in', phone: '9812345678' };
+        vendor = {
+          id: Date.now(),
+          userId: session.userId,
+          ownerName: userObj.name || "Hi Jin Owner",
+          email: userObj.email || "owner@hijin.in",
+          phone: userObj.phone || "9812345678",
+          businessName: "Hi Jin Food Cart",
+          city: "Ludhiana",
+          status: "pending",
+          gst: "",
+          fssai: "",
+          address: "",
+          pincode: "",
+          lat: 30.9010,
+          lng: 75.8573,
+          cartImageUrls: [],
+          description: "",
+          createdAt: new Date().toISOString()
+        };
+        vendors.push(vendor);
+        localStorage.setItem('hijin_vendors', JSON.stringify(vendors));
+        console.log("Dynamically created missing vendor profile:", vendor);
       }
 
       const displayTitle = document.getElementById('vendor-biz-title-display');
       if (displayTitle) {
-        displayTitle.textContent = vendor.businessName || vendor.name || "Hi Jin Food Cart";
+        displayTitle.textContent = vendor.businessName;
       }
 
       const banner = document.getElementById('vendor-status-banner');
       if (banner) {
-banner.className = `status-banner status-${vendor.status}`;
+        banner.className = `status-banner status-${vendor.status}`;
         if (vendor.status === 'pending') {
           banner.innerHTML = `⏳ Pending Approval — Your cart is being reviewed by our team.`;
         } else if (vendor.status === 'approved') {
@@ -3732,8 +3505,8 @@ banner.className = `status-banner status-${vendor.status}`;
         cart = {
           id: Date.now() + 10,
           vendorId: vendor.userId,
-          businessName: vendor.businessName || vendor.name,
-          avgRating: 4.5,
+          businessName: vendor.businessName,
+          avgRating: 0,
           totalRatings: 0
         };
         carts.push(cart);
@@ -3742,27 +3515,23 @@ banner.className = `status-banner status-${vendor.status}`;
       return cart;
     }
 
-    // Upgraded Profile Onboarding Render Engine -> Connected to Supabase Data Layer
-    async function renderMyCart() {
+    function renderMyCart() {
       const session = JSON.parse(localStorage.getItem('hijin_session') || 'null');
       if (!session || session.role !== 'vendor') return;
 
-      let vendor = null;
-      if (window.supabase) {
-        const { data } = await window.supabase.from('hijin_vendors').select('*').eq('userId', session.userId).maybeSingle();
-        vendor = data;
-      } else {
-        const vendors = JSON.parse(localStorage.getItem('hijin_vendors') || '[]');
-        vendor = vendors.find(v => String(v.userId) === String(session.userId));
-      }
+      const vendors = JSON.parse(localStorage.getItem('hijin_vendors') || '[]');
+      const vendor = vendors.find(v => String(v.userId) === String(session.userId));
       if (!vendor) return;
 
       const panel = document.getElementById('vendor-panel-mycart');
       if (!panel) return;
 
+      // Decide what state to show
+      // A. Onboarding: If gst or fssai is empty OR myCartEditMode is true
       const needsOnboarding = !vendor.gst || !vendor.fssai;
       
       if (needsOnboarding || myCartEditMode) {
+        // Show onboarding form
         let cancelBtnHtml = '';
         if (vendor.status === 'approved' && myCartEditMode) {
           cancelBtnHtml = `
@@ -3780,18 +3549,10 @@ banner.className = `status-banner status-${vendor.status}`;
         const cityVal = vendor.city || '';
         const pincodeVal = vendor.pincode || '';
         const descVal = vendor.description || '';
-        
-        // Safety checks for base64 image streams or urls array strings
-        let img1Val = '';
-        let img2Val = '';
-        if (vendor.cartImageUrls) {
-          if (Array.isArray(vendor.cartImageUrls)) {
-            img1Val = vendor.cartImageUrls[0] || '';
-            img2Val = vendor.cartImageUrls[1] || '';
-          } else {
-            img1Val = vendor.cartImageUrls;
-          }
-        }
+        const img1Val = (vendor.cartImageUrls && vendor.cartImageUrls[0]) || '';
+        const img2Val = (vendor.cartImageUrls && vendor.cartImageUrls[1]) || '';
+        const latVal = vendor.lat !== null && vendor.lat !== undefined ? vendor.lat : '';
+        const lngVal = vendor.lng !== null && vendor.lng !== undefined ? vendor.lng : '';
 
         panel.innerHTML = `
           ${cancelBtnHtml}
@@ -3837,7 +3598,8 @@ banner.className = `status-banner status-${vendor.status}`;
                 <input type="text" id="onboard-pincode" placeholder="6-digit pincode" value="${escapeHtml(pincodeVal)}">
                 <span id="onboard-pincode-error" class="inline-error"></span>
               </div>
-<!-- Description -->
+
+              <!-- Description -->
               <div style="margin-bottom: 16px;">
                 <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 16px;">
                   <label class="form-label" for="onboard-description" style="margin-top: 0;">Describe Your Food Cart</label>
@@ -3850,7 +3612,7 @@ banner.className = `status-banner status-${vendor.status}`;
               <!-- Image 1 -->
               <div style="margin-bottom: 16px;">
                 <label class="form-label" for="onboard-img-1">Cart Photo URL (Main — optional)</label>
-                <input type="text" id="onboard-img-1" placeholder="Paste a direct image URL or use device camera" value="${escapeHtml(img1Val)}">
+                <input type="text" id="onboard-img-1" placeholder="Paste a direct image URL (optional)" value="${escapeHtml(img1Val)}">
                 <img id="preview-img-1" style="height: 70px; object-fit: cover; border-radius: 8px; margin-top: 6px; display: none;" alt="Preview 1">
                 <span id="onboard-img-1-error" class="inline-error"></span>
               </div>
@@ -3923,10 +3685,10 @@ banner.className = `status-banner status-${vendor.status}`;
                 
                 <div style="display: flex; gap: 8px;">
                   <div style="flex: 1;">
-                    <input type="number" step="any" id="onboard-lat" placeholder="Latitude" readonly style="margin-top: 0;" value="${escapeHtml((latVal || 30.9010).toString())}">
+                    <input type="number" step="any" id="onboard-lat" placeholder="Latitude" readonly style="margin-top: 0;" value="${escapeHtml(latVal.toString())}">
                   </div>
                   <div style="flex: 1;">
-                    <input type="number" step="any" id="onboard-lng" placeholder="Longitude" readonly style="margin-top: 0;" value="${escapeHtml((lngVal || 75.8573).toString())}">
+                    <input type="number" step="any" id="onboard-lng" placeholder="Longitude" readonly style="margin-top: 0;" value="${escapeHtml(lngVal.toString())}">
                   </div>
                 </div>
                 <span id="onboard-location-error" class="inline-error" style="margin-top: 6px;"></span>
@@ -3936,7 +3698,8 @@ banner.className = `status-banner status-${vendor.status}`;
             </form>
           </div>
         `;
-// Initialize event listeners
+
+        // Initialize event listeners
         const descInput = document.getElementById('onboard-description');
         const descCounter = document.getElementById('description-counter');
         if (descInput && descCounter) {
@@ -4030,7 +3793,7 @@ banner.className = `status-banner status-${vendor.status}`;
             try {
               const constraints = {
                 video: {
-                  facingMode: 'environment',
+                  facingMode: 'environment', // Rear camera for capturing real scenes, fallback to front
                   width: { ideal: 640 },
                   height: { ideal: 480 }
                 },
@@ -4071,11 +3834,13 @@ banner.className = `status-banner status-${vendor.status}`;
           captureCamBtn.addEventListener('click', () => {
             if (videoElement && videoElement.readyState >= 2) {
               const canvas = document.createElement('canvas');
+              // Use actual video resolution, or fall back to standard aspect
               canvas.width = videoElement.videoWidth || 640;
               canvas.height = videoElement.videoHeight || 480;
               const ctx = canvas.getContext('2d');
               if (ctx) {
                 ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                // Compress snapshot as jpeg for high-performance offline storage
                 capturedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
                 
                 if (previewCapImg) {
@@ -4083,7 +3848,7 @@ banner.className = `status-banner status-${vendor.status}`;
                 }
                 if (destBox) {
                   destBox.style.display = 'block';
-}
+                }
               }
             } else {
               if (cameraErr) {
@@ -4177,7 +3942,7 @@ banner.className = `status-banner status-${vendor.status}`;
           }
         }
       } else if (vendor.status === 'pending') {
-        // B. Pending Card -> Connected to active review monitors
+        // B. Pending Card
         panel.innerHTML = `
           <div class="pending-card" style="padding:20px; background:#fffbe6; border:1.5px solid #d97706; border-radius:12px; margin-bottom:16px;">
             <span style="font-size: 32px; display:block; margin-bottom:8px;">⏳</span>
@@ -4193,7 +3958,7 @@ banner.className = `status-banner status-${vendor.status}`;
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px 16px;">
               <div>
                 <span style="font-size:12px; color:#999; display:block;">Business Name</span>
-                <span style="font-size:14px; font-weight:500; color:var(--text);">${escapeHtml(vendor.businessName || vendor.name)}</span>
+                <span style="font-size:14px; font-weight:500; color:var(--text);">${escapeHtml(vendor.businessName)}</span>
               </div>
               <div>
                 <span style="font-size:12px; color:#999; display:block;">GST Number</span>
@@ -4217,13 +3982,13 @@ banner.className = `status-banner status-${vendor.status}`;
               </div>
             </div>
             
-            ${vendor.cartImageUrls ? `
+            ${vendor.cartImageUrls && vendor.cartImageUrls.length > 0 ? `
               <div style="margin-top: 16px;">
                 <span style="font-size:12px; color:#999; display:block; margin-bottom: 6px;">Cart Photos:</span>
                 <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                  ${Array.isArray(vendor.cartImageUrls) ? vendor.cartImageUrls.map(url => `
+                  ${vendor.cartImageUrls.map(url => `
                     <img src="${escapeHtml(url)}" style="width:80px; height:60px; object-fit:cover; border-radius:6px;" alt="Cart Photo" onerror="this.style.display='none'">
-                  `).join('') : `<img src="${escapeHtml(vendor.cartImageUrls)}" style="width:80px; height:60px; object-fit:cover; border-radius:6px;" alt="Cart Photo">`}
+                  `).join('')}
                 </div>
               </div>
             ` : ''}
@@ -4233,29 +3998,14 @@ banner.className = `status-banner status-${vendor.status}`;
             Edit Details
           </button>
         `;
-document.getElementById('btn-edit-pending').addEventListener('click', () => {
+
+        document.getElementById('btn-edit-pending').addEventListener('click', () => {
           myCartEditMode = true;
           renderMyCart();
         });
       } else if (vendor.status === 'approved') {
         // C. Cart Management Panel
         ensureCartExists(vendor);
-
-        let imgHtml = `
-          <div style="height: 120px; width: 200px; background: #e0e0e0; display: flex; align-items: center; justify-content: center; border-radius: 8px; color: #666; font-size: 13px; font-weight: 500;">
-            📷 No Images Uploaded
-          </div>
-        `;
-
-        if (vendor.cartImageUrls) {
-          if (Array.isArray(vendor.cartImageUrls) && vendor.cartImageUrls.length > 0) {
-            imgHtml = vendor.cartImageUrls.map(url => `
-              <img src="${escapeHtml(url)}" style="height:120px; object-fit:cover; border-radius:8px;" alt="Cart Image" onerror="this.onerror=null; this.src='https://placehold.co/200x120?text=Food+Cart';">
-            `).join('');
-          } else if (typeof vendor.cartImageUrls === 'string' && vendor.cartImageUrls.length > 0) {
-            imgHtml = `<img src="${escapeHtml(vendor.cartImageUrls)}" style="height:120px; object-fit:cover; border-radius:8px;" alt="Cart Image" onerror="this.onerror=null; this.src='https://placehold.co/200x120?text=Food+Cart';">`;
-          }
-        }
 
         panel.innerHTML = `
           <div class="approved-strip" style="background:#d1fae5; color:#065f46; padding:12px 16px; border-radius:8px; margin-bottom:16px; font-weight:600; font-size:14px;">
@@ -4265,9 +4015,17 @@ document.getElementById('btn-edit-pending').addEventListener('click', () => {
           <!-- Cart display card -->
           <div class="cart-display-card" style="background: white; border: 1.5px solid var(--border); padding: 16px; border-radius: 12px;">
             <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
-              ${imgHtml}
+              ${vendor.cartImageUrls && vendor.cartImageUrls.length > 0 ? 
+                vendor.cartImageUrls.map(url => `
+                  <img src="${escapeHtml(url)}" style="height:120px; object-fit:cover; border-radius:8px;" alt="Cart Image" onerror="this.onerror=null; this.src='https://placehold.co/200x120?text=Food+Cart';">
+                `).join('') : `
+                <div style="height: 120px; width: 200px; background: #e0e0e0; display: flex; align-items: center; justify-content: center; border-radius: 8px; color: #666; font-size: 13px; font-weight: 500;">
+                  📷 No Images Uploaded
+                </div>
+                `
+              }
             </div>
-            <h3 style="font-size: 18px; font-weight: 700; color: var(--text); margin-top: 12px; margin-bottom: 0;">${escapeHtml(vendor.businessName || vendor.name)}</h3>
+            <h3 style="font-size: 18px; font-weight: 700; color: var(--text); margin-top: 12px; margin-bottom: 0;">${escapeHtml(vendor.businessName)}</h3>
             <p style="font-size: 14px; color: #666; margin-top: 4px; line-height: 1.5; margin-bottom: 0;">${escapeHtml(vendor.description || "No description provided yet.")}</p>
 
             <!-- Rating block -->
@@ -4275,23 +4033,19 @@ document.getElementById('btn-edit-pending').addEventListener('click', () => {
               ${(function() {
                 const carts = JSON.parse(localStorage.getItem('hijin_carts') || '[]');
                 const cart = carts.find(c => String(c.vendorId) === String(session.userId));
-                
-                const avgRating = vendor.avgRating || (cart ? cart.avgRating : 4.5);
-                const totalRatings = vendor.totalRatings || (cart ? cart.totalRatings : 0);
-                
-                if (totalRatings > 0 || vendor.totalRatings > 0) {
-                  const fullStars = Math.floor(avgRating);
-                  const halfStar = avgRating % 1 >= 0.5 ? 1 : 0;
+                if (cart && cart.totalRatings > 0) {
+                  const fullStars = Math.floor(cart.avgRating);
+                  const halfStar = cart.avgRating % 1 >= 0.5 ? 1 : 0;
                   const emptyStars = 5 - fullStars - halfStar;
                   let starStr = '';
                   for (let i = 0; i < fullStars; i++) starStr += '★';
                   for (let i = 0; i < halfStar; i++) starStr += '☆';
-                  for (let i = emptyStars; i < 5; i++) starStr += '☆';
+                  for (let i = 0; i < emptyStars; i++) starStr += '☆';
                   return `
                     <div style="display: flex; align-items: center; gap: 6px;">
                       <span style="color: #ea0001; font-size: 18px; font-weight: 700; line-height: 1;">${starStr}</span>
-                      <span style="font-size: 14px; font-weight: 600; color: var(--text);">${Number(avgRating).toFixed(1)}</span>
-                      <span style="font-size: 13px; color: var(--muted);">(${totalRatings} ratings)</span>
+                      <span style="font-size: 14px; font-weight: 600; color: var(--text);">${cart.avgRating.toFixed(1)}</span>
+                      <span style="font-size: 13px; color: var(--muted);">(${cart.totalRatings} ratings)</span>
                     </div>
                   `;
                 } else {
@@ -4309,53 +4063,48 @@ document.getElementById('btn-edit-pending').addEventListener('click', () => {
           <div style="margin-top: 24px;">
             <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px; color: var(--text);">Recent Customer Reviews</h3>
             <div id="vendor-reviews-list">
-              <!-- Dynamically populated via standard feedback layout loops -->
+              ${(function() {
+                const carts = JSON.parse(localStorage.getItem('hijin_carts') || '[]');
+                const cart = carts.find(c => String(c.vendorId) === String(session.userId));
+                if (!cart) {
+                  return `<p style="font-size: 14px; color: var(--muted); line-height: 1.5; margin: 0;">No customer reviews yet. Reviews will appear here once customers rate your cart.</p>`;
+                }
+                
+                const ratings = JSON.parse(localStorage.getItem('hijin_ratings') || '[]');
+                const cartRatings = ratings.filter(r => r.cartId === cart.id)
+                                            .sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt))
+                                            .slice(0, 10);
+                                            
+                if (cartRatings.length === 0) {
+                  return `<p style="font-size: 14px; color: var(--muted); line-height: 1.5; margin: 0;">No customer reviews yet. Reviews will appear here once customers rate your cart.</p>`;
+                }
+                
+                return cartRatings.map(r => {
+                  let stars = '';
+                  for (let i = 0; i < r.rating; i++) stars += '★';
+                  for (let i = r.rating; i < 5; i++) stars += '☆';
+                  return `
+                    <div style="padding:12px; border:1px solid #f0f0f0; border-radius:8px; margin-bottom:8px; background: white;">
+                      <div style="overflow: hidden; margin-bottom: 4px;">
+                        <span style="font-size: 13px; font-weight: 600; color: var(--text); float: left;">${escapeHtml(r.customerName)}</span>
+                        <span style="font-size: 12px; color: #999; float: right;">${formatDate(r.createdAt)}</span>
+                      </div>
+                      <div style="color: #ea0001; font-size: 12px; margin-bottom: 4px;">${stars}</div>
+                      <p style="font-size: 14px; color: #444; line-height: 1.4; margin: 0;">${escapeHtml(r.comment)}</p>
+                    </div>
+                  `;
+                }).join('');
+              })()}
             </div>
           </div>
         `;
-
-        // Load reviews in context cleanly
-        (async function() {
-          const listDiv = document.getElementById('vendor-reviews-list');
-          if (!listDiv) return;
-          
-          let reviews = [];
-          if (window.supabase) {
-            const { data } = await window.supabase.from('hijin_ratings').select('*').eq('cartId', vendor.id).order('createdAt', { ascending: false }).limit(10);
-            if (data) reviews = data;
-          } else {
-            const ratings = JSON.parse(localStorage.getItem('hijin_ratings') || '[]');
-            reviews = ratings.filter(r => String(r.cartId) === String(vendor.id)).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 10);
-          }
-          
-          if (reviews.length === 0) {
-            listDiv.innerHTML = `<p style="font-size: 14px; color: var(--muted); line-height: 1.5; margin: 0;">No customer reviews yet. Reviews will appear here once customers rate your cart.</p>`;
-            return;
-          }
-          
-          listDiv.innerHTML = reviews.map(r => {
-            let stars = '';
-            for (let i = 0; i < r.rating; i++) stars += '★';
-            for (let i = r.rating; i < 5; i++) stars += '☆';
-            return `
-              <div style="padding:12px; border:1px solid #f0f0f0; border-radius:8px; margin-bottom:8px; background: white;">
-                <div style="overflow: hidden; margin-bottom: 4px;">
-                  <span style="font-size: 13px; font-weight: 600; color: var(--text); float: left;">${escapeHtml(r.customerName)}</span>
-                  <span style="font-size: 12px; color: #999; float: right;">${formatDate(r.createdAt)}</span>
-                </div>
-                <div style="color: #ea0001; font-size: 12px; margin-bottom: 4px;">${stars}</div>
-                <p style="font-size: 14px; color: #444; line-height: 1.4; margin: 0;">${escapeHtml(r.comment)}</p>
-              </div>
-            `;
-          }).join('');
-        })();
 
         document.getElementById('btn-edit-approved').addEventListener('click', () => {
           myCartEditMode = true;
           renderMyCart();
         });
       } else if (vendor.status === 'rejected') {
-// D. Rejection Notice -> Connected to dynamic cloud resubmissions
+        // D. Rejection Notice
         panel.innerHTML = `
           <div class="rejection-card" style="background:#fff5f5; border:1.5px solid #f87171; border-radius:12px; padding:20px;">
             <span style="font-size: 32px; display:block; margin-bottom:8px;">❌</span>
@@ -4369,20 +4118,16 @@ document.getElementById('btn-edit-pending').addEventListener('click', () => {
           </div>
         `;
 
-        document.getElementById('btn-resubmit').addEventListener('click', async () => {
-          if (window.supabase) {
-            await window.supabase.from('hijin_vendors').update({ status: 'pending' }).eq('userId', session.userId);
-          } else {
-            vendor.status = 'pending';
-            localStorage.setItem('hijin_vendors', JSON.stringify(vendors));
-          }
+        document.getElementById('btn-resubmit').addEventListener('click', () => {
+          vendor.status = 'pending';
+          localStorage.setItem('hijin_vendors', JSON.stringify(vendors));
           myCartEditMode = true;
           loadVendorPanel(); // calls switchVendorTab -> renderMyCart
         });
       }
     }
 
-    window.handleOnboardingSubmit = async function(e) {
+    window.handleOnboardingSubmit = function(e) {
       if (e) e.preventDefault();
 
       // Clear previous error messages
@@ -4394,28 +4139,24 @@ document.getElementById('btn-edit-pending').addEventListener('click', () => {
       let isValid = true;
       let firstErrorField = null;
 
-      // 1. GST Number Validation
+      // 1. GST Number - Relaxed for mock/sandbox inputs (allow any Alphanumeric characters between 3 and 20)
       const gstInput = document.getElementById('onboard-gst');
       const gstError = document.getElementById('onboard-gst-error');
-      const gstVal = gstInput ? gstInput.value.trim() : '';
+      const gstVal = gstInput.value.trim();
       if (!gstVal || !/^[a-zA-Z0-9]{3,20}$/.test(gstVal)) {
-        if (gstError) {
-          gstError.textContent = 'GST number is required (at least 3 characters).';
-          gstError.style.display = 'block';
-        }
+        gstError.textContent = 'GST number is required (at least 3 characters).';
+        gstError.style.display = 'block';
         if (!firstErrorField) firstErrorField = gstInput;
         isValid = false;
       }
 
-      // 2. FSSAI License Number Validation
+      // 2. FSSAI License Number - Relaxed for mock inputs (allow any Alphanumeric characters between 3 and 20)
       const fssaiInput = document.getElementById('onboard-fssai');
       const fssaiError = document.getElementById('onboard-fssai-error');
-      const fssaiVal = fssaiInput ? fssaiInput.value.trim() : '';
+      const fssaiVal = fssaiInput.value.trim();
       if (!fssaiVal || !/^[a-zA-Z0-9]{3,20}$/.test(fssaiVal)) {
-        if (fssaiError) {
-          fssaiError.textContent = 'FSSAI license number is required (at least 3 characters).';
-          fssaiError.style.display = 'block';
-        }
+        fssaiError.textContent = 'FSSAI license number is required (at least 3 characters).';
+        fssaiError.style.display = 'block';
         if (!firstErrorField) firstErrorField = fssaiInput;
         isValid = false;
       }
@@ -4423,12 +4164,10 @@ document.getElementById('btn-edit-pending').addEventListener('click', () => {
       // 3. Full Cart Address
       const addressInput = document.getElementById('onboard-address');
       const addressError = document.getElementById('onboard-address-error');
-      const addressVal = addressInput ? addressInput.value.trim() : '';
+      const addressVal = addressInput.value.trim();
       if (!addressVal) {
-        if (addressError) {
-          addressError.textContent = 'Full cart address/location is required.';
-          addressError.style.display = 'block';
-        }
+        addressError.textContent = 'Full cart address/location is required.';
+        addressError.style.display = 'block';
         if (!firstErrorField) firstErrorField = addressInput;
         isValid = false;
       }
@@ -4436,25 +4175,21 @@ document.getElementById('btn-edit-pending').addEventListener('click', () => {
       // 4. City
       const cityInput = document.getElementById('onboard-city');
       const cityError = document.getElementById('onboard-city-error');
-      const cityVal = cityInput ? cityInput.value.trim() : '';
+      const cityVal = cityInput.value.trim();
       if (!cityVal) {
-        if (cityError) {
-          cityError.textContent = 'City is required.';
-          cityError.style.display = 'block';
-        }
+        cityError.textContent = 'City is required.';
+        cityError.style.display = 'block';
         if (!firstErrorField) firstErrorField = cityInput;
         isValid = false;
       }
 
-      // 5. Pincode
+      // 5. Pincode - Relaxed for local testing (at least 3 characters)
       const pincodeInput = document.getElementById('onboard-pincode');
       const pincodeError = document.getElementById('onboard-pincode-error');
-      const pincodeVal = pincodeInput ? pincodeInput.value.trim() : '';
+      const pincodeVal = pincodeInput.value.trim();
       if (!pincodeVal || pincodeVal.length < 3) {
-        if (pincodeError) {
-          pincodeError.textContent = 'Please enter a valid pincode.';
-          pincodeError.style.display = 'block';
-        }
+        pincodeError.textContent = 'Please enter a valid pincode.';
+        pincodeError.style.display = 'block';
         if (!firstErrorField) firstErrorField = pincodeInput;
         isValid = false;
       }
@@ -4462,42 +4197,37 @@ document.getElementById('btn-edit-pending').addEventListener('click', () => {
       // 6. Cart Description
       const descInput = document.getElementById('onboard-description');
       const descError = document.getElementById('onboard-description-error');
-      const descVal = descInput ? descInput.value.trim() : '';
+      const descVal = descInput.value.trim();
       if (!descVal) {
-        if (descError) {
-          descError.textContent = 'Describe Your Food Cart is required.';
-          descError.style.display = 'block';
-        }
+        descError.textContent = 'Describe Your Food Cart is required.';
+        descError.style.display = 'block';
         if (!firstErrorField) firstErrorField = descInput;
         isValid = false;
       }
 
-      // 7. CRITICAL IMAGE PIPELINE FIX: Update validation rule to allow standard data Base64 photo payloads natively
+      // 7. Cart Image URL 1 (Optional)
       const img1Input = document.getElementById('onboard-img-1');
       const img1Error = document.getElementById('onboard-img-1-error');
-      const img1Val = img1Input ? img1Input.value.trim() : '';
-      if (img1Val && !img1Val.includes('http') && !img1Val.startsWith('data:image')) {
-        if (img1Error) {
-          img1Error.textContent = 'If provided, must be a valid URL starting with http or snapshot data stream.';
-          img1Error.style.display = 'block';
-        }
+      const img1Val = img1Input.value.trim();
+      if (img1Val && !img1Val.includes('http')) {
+        img1Error.textContent = 'If provided, must be a valid image URL starting with http.';
+        img1Error.style.display = 'block';
         if (!firstErrorField) firstErrorField = img1Input;
         isValid = false;
       }
 
-      // 8. Image 2 Payload Validation Rule Update
+      // 8. Cart Image URL 2 (Optional)
       const img2Input = document.getElementById('onboard-img-2');
       const img2Error = document.getElementById('onboard-img-2-error');
-      const img2Val = img2Input ? img2Input.value.trim() : '';
-      if (img2Val && !img2Val.includes('http') && !img2Val.startsWith('data:image')) {
-        if (img2Error) {
-          img2Error.textContent = 'If provided, must be a valid URL starting with http or snapshot data stream.';
-          img2Error.style.display = 'block';
-        }
+      const img2Val = img2Input.value.trim();
+      if (img2Val && !img2Val.includes('http')) {
+        img2Error.textContent = 'If provided, must be a valid image URL starting with http.';
+        img2Error.style.display = 'block';
         if (!firstErrorField) firstErrorField = img2Input;
         isValid = false;
       }
-// 9. Location Coordinates - Automatically fallback to default coords if empty/invalid instead of failing validation
+
+      // 9. Location Coordinates - Automatically fallback to default coords if empty/invalid instead of failing validation
       const latInput = document.getElementById('onboard-lat');
       const lngInput = document.getElementById('onboard-lng');
       let latVal = latInput ? latInput.value.trim() : '';
@@ -4519,98 +4249,54 @@ document.getElementById('btn-edit-pending').addEventListener('click', () => {
         return;
       }
 
-      // Successful: Update or insert vendor record -> Upgraded to Supabase Live Operations
+      // Successful: Update or insert vendor record in hijin_vendors
       const session = JSON.parse(localStorage.getItem('hijin_session') || 'null');
       if (!session) return;
 
+      const vendors = JSON.parse(localStorage.getItem('hijin_vendors') || '[]');
+      const vendorIdx = vendors.findIndex(v => String(v.userId) === String(session.userId));
+      
       let isAlreadyApproved = false;
-      const filteredImages = [img1Val, img2Val].filter(u => u.trim());
-
-      if (window.supabase) {
-        // Fetch original status to preserve live approvals cleanly
-        const { data: existingVendor } = await window.supabase.from('hijin_vendors').select('status').eq('userId', session.userId).maybeSingle();
-        if (existingVendor) {
-          isAlreadyApproved = (existingVendor.status === 'approved');
-          const targetStatus = isAlreadyApproved ? 'approved' : 'pending';
-          
-          await window.supabase.from('hijin_vendors').update({
-            gst: gstVal,
-            fssai: fssaiVal,
-            address: addressVal,
-            city: cityVal,
-            pincode: pincodeVal,
-            description: descVal,
-            cartImageUrls: filteredImages, // Uploads Base64 image snapshot data payload strings cleanly
-            lat: parseFloat(latVal) || null,
-            lng: parseFloat(lngVal) || null,
-            status: targetStatus
-          }).eq('userId', session.userId);
-        } else {
-          // Robust entry fallback matrix row creation
-          await window.supabase.from('hijin_vendors').insert([{
-            id: String(Date.now()),
-            userId: session.userId,
-            ownerName: "Hi Jin Merchant",
-            email: session.email || "vendor@hijin.in",
-            phone: "9812345678",
-            businessName: "Hi Jin Street Cart",
-            city: cityVal,
-            gst: gstVal,
-            fssai: fssaiVal,
-            address: addressVal,
-            pincode: pincodeVal,
-            description: descVal,
-            cartImageUrls: filteredImages,
-            lat: parseFloat(latVal) || 30.9010,
-            lng: parseFloat(lngVal) || 75.8573,
-            status: 'pending',
-            createdAt: new Date().toISOString()
-          }]);
+      if (vendorIdx !== -1) {
+        isAlreadyApproved = (vendors[vendorIdx].status === 'approved');
+        vendors[vendorIdx].gst = gstVal;
+        vendors[vendorIdx].fssai = fssaiVal;
+        vendors[vendorIdx].address = addressVal;
+        vendors[vendorIdx].city = cityVal;
+        vendors[vendorIdx].pincode = pincodeVal;
+        vendors[vendorIdx].description = descVal;
+        vendors[vendorIdx].cartImageUrls = [img1Val, img2Val].filter(u => u.trim());
+        vendors[vendorIdx].lat = parseFloat(latVal) || null;
+        vendors[vendorIdx].lng = parseFloat(lngVal) || null;
+        if (!isAlreadyApproved) {
+          vendors[vendorIdx].status = 'pending'; // Set to pending for approval
         }
+        localStorage.setItem('hijin_vendors', JSON.stringify(vendors));
       } else {
-        const vendors = JSON.parse(localStorage.getItem('hijin_vendors') || '[]');
-        const vendorIdx = vendors.findIndex(v => String(v.userId) === String(session.userId));
-        
-        if (vendorIdx !== -1) {
-          isAlreadyApproved = (vendors[vendorIdx].status === 'approved');
-          vendors[vendorIdx].gst = gstVal;
-          vendors[vendorIdx].fssai = fssaiVal;
-          vendors[vendorIdx].address = addressVal;
-          vendors[vendorIdx].city = cityVal;
-          vendors[vendorIdx].pincode = pincodeVal;
-          vendors[vendorIdx].description = descVal;
-          vendors[vendorIdx].cartImageUrls = filteredImages;
-          vendors[vendorIdx].lat = parseFloat(latVal) || null;
-          vendors[vendorIdx].lng = parseFloat(lngVal) || null;
-          if (!isAlreadyApproved) {
-            vendors[vendorIdx].status = 'pending';
-          }
-          localStorage.setItem('hijin_vendors', JSON.stringify(vendors));
-        } else {
-          const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
-          const currentUser = users.find(u => String(u.id) === String(session.userId)) || {};
-          const newVendor = {
-            id: Date.now(),
-            userId: session.userId,
-            ownerName: currentUser.name || "Hi Jin Owner",
-            email: currentUser.email || "hijin@example.com",
-            phone: currentUser.phone || "9812345678",
-            businessName: "Hi Jin",
-            city: cityVal,
-            status: "pending",
-            gst: gstVal,
-            fssai: fssaiVal,
-            address: addressVal,
-            pincode: pincodeVal,
-            lat: parseFloat(latVal) || 30.9010,
-            lng: parseFloat(lngVal) || 75.8573,
-            cartImageUrls: filteredImages,
-            description: descVal,
-            createdAt: new Date().toISOString()
-          };
-          vendors.push(newVendor);
-          localStorage.setItem('hijin_vendors', JSON.stringify(vendors));
-        }
+        // Fallback robust dynamic profile creation if not found
+        const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
+        const currentUser = users.find(u => String(u.id) === String(session.userId)) || { name: "Hi Jin", email: "hijin@example.com", phone: "9812345678" };
+        const newVendor = {
+          id: Date.now(),
+          userId: session.userId,
+          ownerName: currentUser.name || "Hi Jin Owner",
+          email: currentUser.email || "hijin@example.com",
+          phone: currentUser.phone || "9812345678",
+          businessName: "Hi Jin",
+          city: cityVal,
+          status: "pending",
+          gst: gstVal,
+          fssai: fssaiVal,
+          address: addressVal,
+          pincode: pincodeVal,
+          lat: parseFloat(latVal) || 30.9010,
+          lng: parseFloat(lngVal) || 75.8573,
+          cartImageUrls: [img1Val, img2Val].filter(u => u.trim()),
+          description: descVal,
+          createdAt: new Date().toISOString()
+        };
+        vendors.push(newVendor);
+        localStorage.setItem('hijin_vendors', JSON.stringify(vendors));
       }
 
       // Hide editmode
@@ -4663,7 +4349,8 @@ document.getElementById('btn-edit-pending').addEventListener('click', () => {
       }
       showView(portal === 'customer' ? 'customer-view' : 'vendor-view');
     };
-window.exitAdminPreview = function() {
+
+    window.exitAdminPreview = function() {
       adminPreviewMode = false;
       const previewBar = document.getElementById('admin-preview-bar');
       if (previewBar) {
@@ -4678,7 +4365,7 @@ window.exitAdminPreview = function() {
       loadAdminPanel();
     };
 
-    window.seedSampleVendorApplications = async function() {
+    window.seedSampleVendorApplications = function() {
       const vendors = JSON.parse(localStorage.getItem("hijin_vendors") || "[]");
       const users = JSON.parse(localStorage.getItem("hijin_users") || "[]");
 
@@ -4742,60 +4429,25 @@ window.exitAdminPreview = function() {
         }
       ];
 
-      if (window.supabase) {
-        for (const s of samples) {
-          const { data } = await window.supabase.from('hijin_vendors').select('id').eq('userId', String(s.userId)).maybeSingle();
-          if (!data) {
-            await window.supabase.from('hijin_users').insert([{
-              id: String(s.userId),
+      samples.forEach(s => {
+        if (!vendors.some(v => String(v.userId) === String(s.userId))) {
+          vendors.push(s);
+          if (!users.some(u => String(u.id) === String(s.userId))) {
+            users.push({
+              id: s.userId,
               name: s.ownerName,
               email: s.email,
               phone: s.phone,
               password: "password123",
               role: "vendor",
               createdAt: s.createdAt
-            }]);
-            await window.supabase.from('hijin_vendors').insert([{
-              id: String(s.id),
-              userId: String(s.userId),
-              ownerName: s.ownerName,
-              email: s.email,
-              phone: s.phone,
-              businessName: s.businessName,
-              city: s.city,
-              status: s.status,
-              gst: s.gst,
-              fssai: s.fssai,
-              address: s.address,
-              pincode: s.pincode,
-              lat: s.lat,
-              lng: s.lng,
-              cartImageUrls: s.cartImageUrls,
-              description: s.description,
-              createdAt: s.createdAt
-            }]);
+            });
           }
         }
-      } else {
-        samples.forEach(s => {
-          if (!vendors.some(v => String(v.userId) === String(s.userId))) {
-            vendors.push(s);
-            if (!users.some(u => String(u.id) === String(s.userId))) {
-              users.push({
-                id: s.userId,
-                name: s.ownerName,
-                email: s.email,
-                phone: s.phone,
-                password: "password123",
-                role: "vendor",
-                createdAt: s.createdAt
-              });
-            }
-          }
-        });
-        localStorage.setItem("hijin_vendors", JSON.stringify(vendors));
-        localStorage.setItem("hijin_users", JSON.stringify(users));
-      }
+      });
+
+      localStorage.setItem("hijin_vendors", JSON.stringify(vendors));
+      localStorage.setItem("hijin_users", JSON.stringify(users));
       window.renderAdminVendors(window.adminVendorFilter);
     };
 
@@ -4814,8 +4466,8 @@ window.exitAdminPreview = function() {
       }
     }
 
-    // --- VENDORS PANEL MANAGEMENT ENGINE --- -> Upgraded to Supabase Core
-    window.renderAdminVendors = async function(filterStatus) {
+    // --- VENDORS PANEL ---
+    window.renderAdminVendors = function(filterStatus) {
       const panel = document.getElementById('admin-panel-vendors');
       if (!panel) return;
 
@@ -4823,19 +4475,15 @@ window.exitAdminPreview = function() {
         window.adminVendorFilter = filterStatus;
       }
 
-      // CRITICAL ADMIN PANEL FIX: Read freshly registered rows natively from Supabase live ledger database
-      let vendors = [];
-      if (window.supabase) {
-        const { data, error } = await window.supabase.from('hijin_vendors').select('*').order('id', { ascending: false });
-        if (!error && data) vendors = data;
-      } else {
-        vendors = JSON.parse(localStorage.getItem("hijin_vendors") || "[]");
-      }
+      // FIX 3 & FIX 1: Read fresh from localStorage every time
+      const vendors = JSON.parse(localStorage.getItem("hijin_vendors") || "[]");
       
-      console.log("Admin reading operational vendors database ledger state:", vendors);
+      // FIX 7: Verification log in the admin render function
+      console.log("Admin reading hijin_vendors:", vendors);
 
       const pendingCount = vendors.filter(v => (v.status || 'pending') === "pending").length;
 
+      // Filter based on adminVendorFilter
       const filtered = window.adminVendorFilter === "all"
         ? vendors
         : vendors.filter(v => (v.status || 'pending') === window.adminVendorFilter);
@@ -4849,7 +4497,7 @@ window.exitAdminPreview = function() {
               <p style="font-size: 13px; color: #777; margin: 0 auto 16px auto; max-width: 420px;">
                 There are no ${window.adminVendorFilter} applications currently. You can register a new vendor from the main screen, or click the button below to instantly seed high-quality pending applications with FSSAI, GST, and mock cart assets for testing.
               </p>
-<button type="button" onclick="window.seedSampleVendorApplications()" style="background: #ea0001; color: white; border: none; border-radius: 20px; padding: 8px 18px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(234,0,1,0.15);" onmouseover="this.style.background='#c80001'" onmouseout="this.style.background='#ea0001'">
+              <button type="button" onclick="window.seedSampleVendorApplications()" style="background: #ea0001; color: white; border: none; border-radius: 20px; padding: 8px 18px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(234,0,1,0.15);" onmouseover="this.style.background='#c80001'" onmouseout="this.style.background='#ea0001'">
                 🌱 Seed High-Quality Applications
               </button>
             </td>
@@ -4859,6 +4507,7 @@ window.exitAdminPreview = function() {
         filtered.forEach(v => {
           const isExpanded = !!expandedVendors[v.id];
           
+          // FIX 4: Status badge styling
           let badgeStyle = '';
           let statusText = '';
           if (v.status === 'approved') {
@@ -4874,7 +4523,7 @@ window.exitAdminPreview = function() {
 
           rowsHtml += `
             <tr style="border-bottom:1px solid #f0f0f0;">
-              <td style="padding:10px 12px; font-weight: 600;">${escapeHtml(v.businessName || v.name || "—")}</td>
+              <td style="padding:10px 12px; font-weight: 600;">${escapeHtml(v.businessName || "—")}</td>
               <td style="padding:10px 12px;">${escapeHtml(v.ownerName || "—")}</td>
               <td style="padding:10px 12px;">${escapeHtml(v.city || "—")}</td>
               <td style="padding:10px 12px; font-family:var(--font-mono); font-size:12px;">${escapeHtml(v.fssai || "Not submitted yet")}</td>
@@ -4882,9 +4531,9 @@ window.exitAdminPreview = function() {
               <td style="padding:10px 12px;"><span style="${badgeStyle}">${escapeHtml(statusText)}</span></td>
               <td style="padding:10px 12px;">
                 <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                  <button type="button" onclick="window.approveVendor('${v.id}')" style="background:#059669; color:white; border:none; border-radius:6px; padding:5px 12px; font-size:12px; cursor:pointer;">Approve</button>
-                  <button type="button" onclick="window.rejectVendor('${v.id}')" style="background:#dc2626; color:white; border:none; border-radius:6px; padding:5px 12px; font-size:12px; cursor:pointer;">Reject</button>
-                  <button type="button" onclick="window.toggleVendorDetails('${v.id}')" style="background:#6b7280; color:white; border:none; border-radius:6px; padding:5px 12px; font-size:12px; cursor:pointer;">
+                  <button type="button" onclick="window.approveVendor(${v.id})" style="background:#059669; color:white; border:none; border-radius:6px; padding:5px 12px; font-size:12px; cursor:pointer;">Approve</button>
+                  <button type="button" onclick="window.rejectVendor(${v.id})" style="background:#dc2626; color:white; border:none; border-radius:6px; padding:5px 12px; font-size:12px; cursor:pointer;">Reject</button>
+                  <button type="button" onclick="window.toggleVendorDetails(${v.id})" style="background:#6b7280; color:white; border:none; border-radius:6px; padding:5px 12px; font-size:12px; cursor:pointer;">
                     ${isExpanded ? 'Hide Details' : 'View Details'}
                   </button>
                 </div>
@@ -4895,16 +4544,12 @@ window.exitAdminPreview = function() {
           if (isExpanded) {
             let imgHtml = '';
             const images = v.cartImageUrls || [];
-            if (!images || images.length === 0) {
+            if (images.length === 0) {
               imgHtml = '<span style="font-size: 12px; color: #999; font-style:italic;">No images uploaded</span>';
             } else {
-              if (Array.isArray(images)) {
-                images.forEach(img => {
-                  imgHtml += `<img src="${escapeHtml(img)}" style="width:80px; height:60px; object-fit:cover; border-radius:6px; margin:4px;" alt="Cart" />`;
-                });
-              } else if (typeof images === 'string') {
-                imgHtml = `<img src="${escapeHtml(images)}" style="width:80px; height:60px; object-fit:cover; border-radius:6px; margin:4px;" alt="Cart" />`;
-              }
+              images.forEach(img => {
+                imgHtml += `<img src="${escapeHtml(img)}" style="width:80px; height:60px; object-fit:cover; border-radius:6px; margin:4px;" alt="Cart" />`;
+              });
             }
 
             rowsHtml += `
@@ -4916,7 +4561,7 @@ window.exitAdminPreview = function() {
                     <div><strong>Location Coordinate:</strong> Lat: ${escapeHtml(v.lat || '0')}, Lng: ${escapeHtml(v.lng || '0')}</div>
                     <div><strong>Submitted On:</strong> ${escapeHtml(formatDate(v.createdAt))}</div>
                     <div style="margin-top: 4px;">
-                      <strong>Cart Images / Web Snapshot Payloads:</strong>
+                      <strong>Cart Images:</strong>
                       <div style="display:flex; flex-wrap:wrap; margin-top:4px;">${imgHtml}</div>
                     </div>
                   </div>
@@ -4930,16 +4575,19 @@ window.exitAdminPreview = function() {
       const activeClass = 'background:#ea0001; color:white; border:1px solid #ea0001;';
       const inactiveClass = 'background:white; color:#555; border:1px solid #d0d0d0;';
 
-      const debugVendorsCount = vendors.length;
-      const debugUsersCount = vendors.length;
+      // FIX 6: Read debug counts live
+      const debugVendorsCount = JSON.parse(localStorage.getItem('hijin_vendors') || '[]').length;
+      const debugUsersCount = JSON.parse(localStorage.getItem('hijin_users') || '[]').length;
 
       panel.innerHTML = `
+        <!-- FIX 5: Dynamic Counter and new Heading -->
         <h2 style="font-size: 18px; font-weight: 700; color: #222; margin-bottom: 0;">Vendor Applications</h2>
         <p style="font-size: 13px; color: #666; margin-top: 4px; margin-bottom: 12px;">Showing ${filtered.length} of ${vendors.length} total vendors</p>
 
+        <!-- FIX 6: Debug Helper Box -->
         <div style="background: #f3f4f6; font-size: 12px; padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; color: #666; display: inline-flex; align-items: center; gap: 12px; line-height: 1; border: 1px solid #e5e7eb;">
-          <span>🔍 Cloud Integration Status: Connected live to Supabase [${debugVendorsCount}] accounts</span>
-          <button type="button" onclick="window.renderAdminVendors(window.adminVendorFilter)" style="background: #e5e7eb; border: 1px solid #d1d5db; color: #374151; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;" onmouseover="this.style.background='#d1dbdb'" onmouseout="this.style.background='#e5e7eb'">
+          <span>🔍 Debug: hijin_vendors in localStorage = [${debugVendorsCount}] records | hijin_users = [${debugUsersCount}] records</span>
+          <button type="button" onclick="window.renderAdminVendors(window.adminVendorFilter)" style="background: #e5e7eb; border: 1px solid #d1d5db; color: #374151; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;" onmouseover="this.style.background='#d1d5db'" onmouseout="this.style.background='#e5e7eb'">
             🔄 Refresh Data
           </button>
         </div>
@@ -4950,7 +4598,8 @@ window.exitAdminPreview = function() {
           <button type="button" onclick="window.setAdminVendorFilter('approved')" style="padding:6px 16px; border-radius:20px; cursor:pointer; font-size:13px; outline:none; font-weight:500; ${window.adminVendorFilter === 'approved' ? activeClass : inactiveClass}">Approved</button>
           <button type="button" onclick="window.setAdminVendorFilter('rejected')" style="padding:6px 16px; border-radius:20px; cursor:pointer; font-size:13px; outline:none; font-weight:500; ${window.adminVendorFilter === 'rejected' ? activeClass : inactiveClass}">Rejected</button>
         </div>
-<div style="overflow-x:auto; border:1px solid #e0e0e0; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,0.05); background:white;">
+
+        <div style="overflow-x:auto; border:1px solid #e0e0e0; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,0.05); background:white;">
           <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left;">
             <thead>
               <tr style="background:#ea0001; color:white;">
@@ -4981,91 +4630,57 @@ window.exitAdminPreview = function() {
       window.renderAdminVendors(window.adminVendorFilter);
     };
 
-    // Upgraded Core Vendor Approval Mechanism -> Connected Directly to Cloud Storage Tables
-    window.approveVendor = async function(vendorId) {
-      if (window.supabase) {
-        // Core Live Approval Fix: Overwrite database rows directly on cloud nodes
-        const { error } = await window.supabase.from('hijin_vendors').update({ status: "approved" }).eq('id', vendorId);
-        if (error) {
-          alert("Database communication error: " + error.message);
-          return;
-        }
-      } else {
-        const vendors = JSON.parse(localStorage.getItem('hijin_vendors') || '[]');
-        const vendorIdx = vendors.findIndex(v => String(v.id) === String(vendorId));
-        if (vendorIdx === -1) return;
+    window.approveVendor = function(vendorId) {
+      const vendors = JSON.parse(localStorage.getItem('hijin_vendors') || '[]');
+      const vendorIdx = vendors.findIndex(v => String(v.id) === String(vendorId));
+      if (vendorIdx === -1) return;
 
-        vendors[vendorIdx].status = "approved";
-        localStorage.setItem('hijin_vendors', JSON.stringify(vendors));
+      vendors[vendorIdx].status = "approved";
+      localStorage.setItem('hijin_vendors', JSON.stringify(vendors));
 
-        const vendor = vendors[vendorIdx];
-        const carts = JSON.parse(localStorage.getItem('hijin_carts') || '[]');
-        const cartExists = carts.some(c => String(c.vendorId) === String(vendor.userId));
+      const vendor = vendors[vendorIdx];
+      const carts = JSON.parse(localStorage.getItem('hijin_carts') || '[]');
+      const cartExists = carts.some(c => String(c.vendorId) === String(vendor.userId));
 
-        if (!cartExists) {
-          carts.push({
-            id: Date.now(),
-            vendorId: vendor.userId,
-            name: vendor.businessName || vendor.name,
-            description: vendor.description || "Street food cart",
-            imageUrls: vendor.cartImageUrls && vendor.cartImageUrls.length > 0 ? (Array.isArray(vendor.cartImageUrls) ? vendor.cartImageUrls : [vendor.cartImageUrls]) : ["https://placehold.co/400x220/ea0001/ffffff?text=New+Street+Cart"],
-            lat: vendor.lat || 30.9010,
-            lng: vendor.lng || 75.8573,
-            city: vendor.city,
-            isActive: true,
-            isTopRated: false,
-            avgRating: 4.5,
-            totalRatings: 0,
-            tags: ["Verified"]
-          });
-          localStorage.setItem('hijin_carts', JSON.stringify(carts));
-        }
+      if (!cartExists) {
+        carts.push({
+          id: Date.now(),
+          vendorId: vendor.userId,
+          name: vendor.businessName,
+          description: vendor.description || "Street food cart",
+          imageUrls: vendor.cartImageUrls && vendor.cartImageUrls.length > 0 ? vendor.cartImageUrls : ["https://placehold.co/400x220/ea0001/ffffff?text=New+Street+Cart"],
+          lat: vendor.lat || 0,
+          lng: vendor.lng || 0,
+          city: vendor.city,
+          isActive: true,
+          isTopRated: false,
+          avgRating: 0,
+          totalRatings: 0,
+          tags: []
+        });
+        localStorage.setItem('hijin_carts', JSON.stringify(carts));
       }
 
-      window.renderAdminVendors(window.adminVendorFilter);
+      window.renderAdminVendors("pending");
     };
 
-    window.rejectVendor = async function(vendorId) {
-      if (window.supabase) {
-        await window.supabase.from('hijin_vendors').update({ status: "rejected" }).eq('id', vendorId);
-      } else {
-        const vendors = JSON.parse(localStorage.getItem('hijin_vendors') || '[]');
-        const vendorIdx = vendors.findIndex(v => String(v.id) === String(vendorId));
-        if (vendorIdx !== -1) {
-          vendors[vendorIdx].status = "rejected";
-          localStorage.setItem('hijin_vendors', JSON.stringify(vendors));
-        }
+    window.rejectVendor = function(vendorId) {
+      const vendors = JSON.parse(localStorage.getItem('hijin_vendors') || '[]');
+      const vendorIdx = vendors.findIndex(v => String(v.id) === String(vendorId));
+      if (vendorIdx !== -1) {
+        vendors[vendorIdx].status = "rejected";
+        localStorage.setItem('hijin_vendors', JSON.stringify(vendors));
       }
-      window.renderAdminVendors(window.adminVendorFilter);
+      window.renderAdminVendors("pending");
     };
 
 
     // --- CARTS PANEL ---
-    window.renderAdminCarts = async function() {
+    window.renderAdminCarts = function() {
       const panel = document.getElementById('admin-panel-carts');
       if (!panel) return;
 
-      let carts = [];
-      if (window.supabase) {
-        // Read active storefront parameters from cloud memory dynamically
-        const { data } = await window.supabase.from('hijin_vendors').select('*').eq('status', 'approved');
-        if (data) {
-          data.forEach(v => {
-            carts.push({
-              id: v.id,
-              vendorId: v.userId,
-              name: v.businessName || v.name || "Dynamic Storefront",
-              description: v.description || "Hygienic listed food cart",
-              tags: ["Verified"],
-              isActive: true,
-              isTopRated: true,
-              city: v.city || "Local Area"
-            });
-          });
-        }
-      } else {
-        carts = JSON.parse(localStorage.getItem('hijin_carts') || '[]');
-      }
+      const carts = JSON.parse(localStorage.getItem('hijin_carts') || '[]');
 
       let rowsHtml = '';
       if (carts.length === 0) {
@@ -5098,7 +4713,7 @@ window.exitAdminPreview = function() {
                     <button type="button" onclick="saveCartEdit(${cart.id})" style="background:#059669; color:white; border:none; border-radius:6px; padding:6px 12px; font-size:12px; cursor:pointer;" class="btn-sm-green">Save</button>
                     <button type="button" onclick="cancelCartEdit(${cart.id})" style="background:#6b7280; color:white; border:none; border-radius:6px; padding:6px 12px; font-size:12px; cursor:pointer;" class="btn-sm-grey">Cancel</button>
                   </div>
-</td>
+                </td>
               </tr>
             `;
           } else {
@@ -5114,22 +4729,22 @@ window.exitAdminPreview = function() {
                   ` : ''}
                 </td>
                 <td style="padding: 10px 12px;">${escapeHtml(cart.city)}</td>
-                <td style="padding: 10px 12px; font-weight: 700; color: #c2410c;">★ ${parseFloat(cart.avgRating || 4.5).toFixed(1)}</td>
+                <td style="padding: 10px 12px; font-weight: 700; color: #c2410c;">★ ${parseFloat(cart.avgRating || 0).toFixed(1)}</td>
                 <td style="padding: 10px 12px; color: #666;">${escapeHtml(cart.totalRatings || 0)}</td>
                 <td style="padding: 10px 12px;">
                   <label class="switch-label">
-                    <input type="checkbox" ${cart.isActive ? 'checked' : ''} onchange="toggleCartActive('${cart.id}')" />
+                    <input type="checkbox" ${cart.isActive ? 'checked' : ''} onchange="toggleCartActive(${cart.id})" />
                     <span class="switch-slider"></span>
                   </label>
                 </td>
                 <td style="padding: 10px 12px;">
                   <label class="switch-label">
-                    <input type="checkbox" ${cart.isTopRated ? 'checked' : ''} onchange="toggleCartTopRated('${cart.id}')" />
+                    <input type="checkbox" ${cart.isTopRated ? 'checked' : ''} onchange="toggleCartTopRated(${cart.id})" />
                     <span class="switch-slider"></span>
                   </label>
                 </td>
                 <td style="padding: 10px 12px;">
-                  <button type="button" onclick="startCartEdit('${cart.id}')" style="background:#3b82f6; color:white; border:none; border-radius:6px; padding:5px 12px; font-size:12px; cursor:pointer;">Edit</button>
+                  <button type="button" onclick="startCartEdit(${cart.id})" style="background:#3b82f6; color:white; border:none; border-radius:6px; padding:5px 12px; font-size:12px; cursor:pointer;">Edit</button>
                 </td>
               </tr>
             `;
@@ -5162,104 +4777,64 @@ window.exitAdminPreview = function() {
       `;
     };
 
-    window.toggleCartActive = async function(cartId) {
-      if (window.supabase) {
-        // Toggle active tags inside real cloud instances
-        const { data: current } = await window.supabase.from('hijin_vendors').select('isActive').eq('id', cartId).maybeSingle();
-        const nextState = current ? !current.isActive : false;
-        await window.supabase.from('hijin_vendors').update({ isActive: nextState }).eq('id', cartId);
-      } else {
-        const carts = JSON.parse(localStorage.getItem('hijin_carts') || '[]');
-        const idx = carts.findIndex(c => String(c.id) === String(cartId));
-        if (idx !== -1) {
-          carts[idx].isActive = !carts[idx].isActive;
-          localStorage.setItem('hijin_carts', JSON.stringify(carts));
-        }
+    window.toggleCartActive = function(cartId) {
+      const carts = JSON.parse(localStorage.getItem('hijin_carts') || '[]');
+      const idx = carts.findIndex(c => c.id === cartId);
+      if (idx !== -1) {
+        carts[idx].isActive = !carts[idx].isActive;
+        localStorage.setItem('hijin_carts', JSON.stringify(carts));
       }
-      window.renderAdminCarts();
+      renderAdminCarts();
     };
 
-    window.toggleCartTopRated = async function(cartId) {
-      if (window.supabase) {
-        const { data: current } = await window.supabase.from('hijin_vendors').select('isTopRated').eq('id', cartId).maybeSingle();
-        const nextState = current ? !current.isTopRated : false;
-        await window.supabase.from('hijin_vendors').update({ isTopRated: nextState }).eq('id', cartId);
-      } else {
-        const carts = JSON.parse(localStorage.getItem('hijin_carts') || '[]');
-        const idx = carts.findIndex(c => String(c.id) === String(cartId));
-        if (idx !== -1) {
-          carts[idx].isTopRated = !carts[idx].isTopRated;
-          localStorage.setItem('hijin_carts', JSON.stringify(carts));
-        }
+    window.toggleCartTopRated = function(cartId) {
+      const carts = JSON.parse(localStorage.getItem('hijin_carts') || '[]');
+      const idx = carts.findIndex(c => c.id === cartId);
+      if (idx !== -1) {
+        carts[idx].isTopRated = !carts[idx].isTopRated;
+        localStorage.setItem('hijin_carts', JSON.stringify(carts));
       }
-      window.renderAdminCarts();
+      renderAdminCarts();
     };
 
     window.startCartEdit = function(cartId) {
       editingCartId = cartId;
-      window.renderAdminCarts();
+      renderAdminCarts();
     };
 
     window.cancelCartEdit = function(cartId) {
       editingCartId = null;
-      window.renderAdminCarts();
+      renderAdminCarts();
     };
 
-    window.saveCartEdit = async function(cartId) {
+    window.saveCartEdit = function(cartId) {
       const nameInput = document.getElementById(`edit-cart-name-${cartId}`);
       const descInput = document.getElementById(`edit-cart-desc-${cartId}`);
       const tagsInput = document.getElementById(`edit-cart-tags-${cartId}`);
 
-      if (!nameInput || !descInput || !tagsInput) return;
-
-      const updatedName = nameInput.value.trim();
-      const updatedDesc = descInput.value.trim();
-
-      if (window.supabase) {
-        await window.supabase.from('hijin_vendors').update({
-          businessName: updatedName,
-          description: updatedDesc
-        }).eq('id', cartId);
-      } else {
-        const carts = JSON.parse(localStorage.getItem('hijin_carts') || '[]');
-        const idx = carts.findIndex(c => String(c.id) === String(cartId));
-        if (idx !== -1) {
-          carts[idx].name = updatedName;
-          carts[idx].description = updatedDesc;
-          carts[idx].tags = tagsInput.value.split(',').map(t => t.trim()).filter(t => t.length > 0);
-          localStorage.setItem('hijin_carts', JSON.stringify(carts));
-        }
+      const carts = JSON.parse(localStorage.getItem('hijin_carts') || '[]');
+      const idx = carts.findIndex(c => c.id === cartId);
+      if (idx !== -1 && nameInput && descInput && tagsInput) {
+        carts[idx].name = nameInput.value.trim();
+        carts[idx].description = descInput.value.trim();
+        carts[idx].tags = tagsInput.value.split(',').map(t => t.trim()).filter(t => t.length > 0);
+        localStorage.setItem('hijin_carts', JSON.stringify(carts));
       }
 
       editingCartId = null;
-      window.renderAdminCarts();
+      renderAdminCarts();
     };
 
 
     // --- COUPONS PANEL ---
     window.renderAdminCoupons = function() {
-const panel = document.getElementById('admin-panel-coupons');
+      const panel = document.getElementById('admin-panel-coupons');
       if (!panel) return;
 
-      // Ingestion Matrix: Read fresh coupon configurations from the cloud database ledger
-      let coupons = [];
-      let carts = [];
+      const coupons = JSON.parse(localStorage.getItem('hijin_coupons') || '[]');
+      coupons.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-      if (window.supabase) {
-        const { data: cloudCoupons } = await window.supabase.from('hijin_coupons').select('*').order('id', { ascending: false });
-        if (cloudCoupons) coupons = cloudCoupons;
-
-        const { data: cloudCarts } = await window.supabase.from('hijin_vendors').select('*').eq('status', 'approved');
-        if (cloudCarts) {
-          cloudCarts.forEach(v => {
-            carts.push({ id: v.id, name: v.businessName || v.name || "Food Cart" });
-          });
-        }
-      } else {
-        coupons = JSON.parse(localStorage.getItem('hijin_coupons') || '[]');
-        coupons.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        carts = JSON.parse(localStorage.getItem('hijin_carts') || '[]');
-      }
+      const carts = JSON.parse(localStorage.getItem('hijin_carts') || '[]');
 
       let optHtml = `<option value="any">Any Cart</option>`;
       carts.forEach(c => {
@@ -5276,26 +4851,23 @@ const panel = document.getElementById('admin-panel-coupons');
       } else {
         coupons.forEach(c => {
           let cartName = 'Any Cart';
-          if (c.cartId && c.cartId !== 'any') {
+          if (c.cartId !== 'any') {
             const found = carts.find(ca => String(ca.id) === String(c.cartId));
             if (found) cartName = found.name;
           }
 
-          const isCouponRedeemed = window.supabase ? (c.status === 'redeemed') : c.isRedeemed;
-          const statusBadge = isCouponRedeemed
+          const statusBadge = c.isRedeemed
             ? '<span style="background:#f3f4f6; color:#6b7280; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600;">Redeemed</span>'
             : '<span style="background:#d1fae5; color:#065f46; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600;">Active</span>';
 
-          const displayCodeString = c.code || c.barcode_string || "HIJIN";
-
           rowsHtml += `
             <tr style="border-bottom: 1px solid #f0f0f0;">
-              <td style="padding: 10px 12px; font-weight:700;">${escapeHtml(displayCodeString)}</td>
+              <td style="padding: 10px 12px; font-weight:700;">${escapeHtml(c.code)}</td>
               <td style="padding: 10px 12px; font-weight:600; color:#ea0001;">₹${parseFloat(c.value || 0).toFixed(2)}</td>
-              <td style="padding: 10px 12px;">${escapeHtml(c.assignedTo || 'all')}</td>
+              <td style="padding: 10px 12px;">${escapeHtml(c.assignedTo)}</td>
               <td style="padding: 10px 12px; max-width: 15rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(cartName)}</td>
               <td style="padding: 10px 12px;">${statusBadge}</td>
-              <td style="padding: 10px 12px; color:#555;">${escapeHtml(c.client_email || c.redeemedBy || '—')}</td>
+              <td style="padding: 10px 12px; color:#555;">${escapeHtml(c.redeemedBy || '—')}</td>
               <td style="padding: 10px 12px; font-size:12px; color:#666;">${escapeHtml(formatDate(c.createdAt))}</td>
             </tr>
           `;
@@ -5376,7 +4948,7 @@ const panel = document.getElementById('admin-panel-coupons');
     window.generateRandomCouponCode = function() {
       const codeInput = document.getElementById('coupon-new-code');
       if (codeInput) {
-codeInput.value = Math.random().toString(36).substring(2,10).toUpperCase();
+        codeInput.value = Math.random().toString(36).substring(2,10).toUpperCase();
       }
     };
 
@@ -5389,8 +4961,7 @@ codeInput.value = Math.random().toString(36).substring(2,10).toUpperCase();
       }
     };
 
-    // Upgraded Coupon Issuance Engine -> Connected Natively to Supabase Core Vouchers Ledger
-    window.handleCreateCoupon = async function(e) {
+    window.handleCreateCoupon = function(e) {
       if (e) e.preventDefault();
       const codeInput = document.getElementById('coupon-new-code');
       const valInput = document.getElementById('coupon-new-value');
@@ -5420,55 +4991,25 @@ codeInput.value = Math.random().toString(36).substring(2,10).toUpperCase();
         return;
       }
 
-      let codeExists = false;
-      let targetUserIdString = "all";
-
-      if (window.supabase) {
-        // Query cloud ledger nodes to prevent key signature collisions
-        const { data: duplicateCheck } = await window.supabase.from('hijin_coupons').select('id').eq('barcode_string', code).maybeSingle();
-        if (duplicateCheck) codeExists = true;
-
-        if (isSpecific) {
-          const { data: userRecord } = await window.supabase.from('hijin_users').select('id').eq('email', assignTarget).maybeSingle();
-          if (userRecord) targetUserIdString = String(userRecord.id);
-        }
-      } else {
-        const coupons = JSON.parse(localStorage.getItem('hijin_coupons') || '[]');
-        codeExists = coupons.some(c => c.code === code);
-      }
-
+      const coupons = JSON.parse(localStorage.getItem('hijin_coupons') || '[]');
+      const codeExists = coupons.some(c => c.code === code);
       if (codeExists) {
         msgArea.innerHTML = `<span style="color:#ea0001;">Error: Coupon code "${code}" already exists.</span>`;
         return;
       }
 
-      const generatedId = String(Date.now());
-      const newCouponPayload = {
-        id: generatedId,
-        barcode_string: code,
+      coupons.unshift({
+        id: Date.now(),
+        code: code,
         value: valAmount,
-        status: 'active',
-        user_id: targetUserIdString,
-        client_email: isSpecific ? assignTarget : 'all',
         assignedTo: assignTarget,
-        cartId: cartIdVal,
+        cartId: cartIdVal === 'any' ? 'any' : (isNaN(Number(cartIdVal)) ? cartIdVal : Number(cartIdVal)),
         isRedeemed: false,
         redeemedBy: null,
         redeemedAt: null,
         createdAt: new Date().toISOString()
-      };
-
-      if (window.supabase) {
-        const { error } = await window.supabase.from('hijin_coupons').insert([newCouponPayload]);
-        if (error) {
-          msgArea.innerHTML = `<span style="color:#ea0001;">Cloud communication error: ${error.message}</span>`;
-          return;
-        }
-      } else {
-        const coupons = JSON.parse(localStorage.getItem('hijin_coupons') || '[]');
-        coupons.unshift(newCouponPayload);
-        localStorage.setItem('hijin_coupons', JSON.stringify(coupons));
-      }
+      });
+      localStorage.setItem('hijin_coupons', JSON.stringify(coupons));
 
       codeInput.value = '';
       valInput.value = '';
@@ -5477,7 +5018,7 @@ codeInput.value = Math.random().toString(36).substring(2,10).toUpperCase();
       toggleAssignEmailField(false);
       if (cartLinkSelect) cartLinkSelect.value = 'any';
 
-      window.renderAdminCoupons();
+      renderAdminCoupons();
       const newMsgArea = document.getElementById('coupon-create-msg');
       if (newMsgArea) {
         newMsgArea.innerHTML = `<span style="color:#059669;">✅ Coupon "${code}" created successfully!</span>`;
@@ -5487,7 +5028,7 @@ codeInput.value = Math.random().toString(36).substring(2,10).toUpperCase();
 
     // --- BANNERS PANEL ---
     window.renderAdminBanners = function() {
-     const panel = document.getElementById('admin-panel-banners');
+      const panel = document.getElementById('admin-panel-banners');
       if (!panel) return;
 
       const banners = JSON.parse(localStorage.getItem('hijin_banners') || '[]');
@@ -5607,7 +5148,8 @@ codeInput.value = Math.random().toString(36).substring(2,10).toUpperCase();
         msgArea.innerHTML = '<span style="color:#ea0001;">Error: Link URL must start with "https://".</span>';
         return;
       }
-const banners = JSON.parse(localStorage.getItem('hijin_banners') || '[]');
+
+      const banners = JSON.parse(localStorage.getItem('hijin_banners') || '[]');
       banners.unshift({
         id: Date.now(),
         title: title,
@@ -5650,59 +5192,32 @@ const banners = JSON.parse(localStorage.getItem('hijin_banners') || '[]');
     };
 
 
-    // --- REPORTS PANEL MANAGEMENT ENGINE --- -> Upgraded to Supabase Core Aggregations
-    window.renderAdminReports = async function() {
+    // --- REPORTS PANEL ---
+    window.renderAdminReports = function() {
       const panel = document.getElementById('admin-panel-reports');
       if (!panel) return;
 
-      // Ingestion Matrix: Pull fresh operational rows natively from the cloud system layer
-      let users = [];
-      let vendors = [];
-      let coupons = [];
-      let ratings = [];
-
-      if (window.supabase) {
-        const { data: cloudUsers } = await window.supabase.from('hijin_users').select('*');
-        if (cloudUsers) users = cloudUsers;
-
-        const { data: cloudVendors } = await window.supabase.from('hijin_vendors').select('*');
-        if (cloudVendors) vendors = cloudVendors;
-
-        const { data: cloudCoupons } = await window.supabase.from('hijin_coupons').select('*');
-        if (cloudCoupons) coupons = cloudCoupons;
-
-        const { data: cloudRatings } = await window.supabase.from('hijin_ratings').select('*');
-        if (cloudRatings) ratings = cloudRatings;
-      } else {
-        users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
-        vendors = JSON.parse(localStorage.getItem('hijin_vendors') || '[]');
-        coupons = JSON.parse(localStorage.getItem('hijin_coupons') || '[]');
-        ratings = JSON.parse(localStorage.getItem('hijin_ratings') || '[]');
-      }
+      const users = JSON.parse(localStorage.getItem('hijin_users') || '[]');
+      const vendors = JSON.parse(localStorage.getItem('hijin_vendors') || '[]');
+      const carts = JSON.parse(localStorage.getItem('hijin_carts') || '[]');
+      const coupons = JSON.parse(localStorage.getItem('hijin_coupons') || '[]');
+      const txns = JSON.parse(localStorage.getItem('hijin_wallet_txns') || '[]');
+      const ratings = JSON.parse(localStorage.getItem('hijin_ratings') || '[]');
 
       const customersCount = users.filter(u => u.role === 'customer').length;
+
       const vendorsCount = vendors.length;
       const approvedVendorsCount = vendors.filter(v => v.status === 'approved').length;
       const pendingVendorsCount = vendors.filter(v => v.status === 'pending').length;
 
-      // Transform data dynamically for analytical list mappings
-      const structuredCarts = vendors.filter(v => v.status === 'approved').map(v => ({
-        id: v.id,
-        name: v.businessName || v.name || "Dynamic Cart",
-        avgRating: parseFloat(v.avgRating || 4.5),
-        totalRatings: parseInt(v.totalRatings || 0),
-        isActive: v.isActive !== false
-      }));
+      const activeCartsCount = carts.filter(c => c.isActive === true).length;
 
-      const activeCartsCount = structuredCarts.filter(c => c.isActive === true).length;
-
-      const isCouponRedeemedCheck = (c) => window.supabase ? (c.status === 'redeemed') : c.isRedeemed;
-      const redeemedCoupons = coupons.filter(c => isCouponRedeemedCheck(c));
+      const redeemedCoupons = coupons.filter(c => c.isRedeemed === true);
       const redeemedCouponsCount = redeemedCoupons.length;
       const sumRedeemedValue = redeemedCoupons.reduce((sum, c) => sum + (parseFloat(c.value) || 0), 0);
 
-      const ratedCarts = structuredCarts.filter(c => c.totalRatings > 0);
-      ratedCarts.sort((a, b) => b.avgRating - a.avgRating);
+      const ratedCarts = carts.filter(c => (c.totalRatings || 0) > 0);
+      ratedCarts.sort((a, b) => (parseFloat(b.avgRating) || 0) - (parseFloat(a.avgRating) || 0));
       const top5Carts = ratedCarts.slice(0, 5);
 
       let leftTableHtml = '';
@@ -5720,8 +5235,8 @@ const banners = JSON.parse(localStorage.getItem('hijin_banners') || '[]');
             <tr style="border-bottom:1px solid #f0f0f0;">
               <td style="padding:10px 12px; font-weight:700; color:#ea0001; font-size:14px;">${idx + 1}</td>
               <td style="padding:10px 12px; font-weight:600; color:#333;">${escapeHtml(c.name)}</td>
-              <td style="padding:10px 12px; font-weight:700; color:#c2410c;">★ ${c.avgRating.toFixed(1)}</td>
-              <td style="padding:10px 12px; color:#666;">${escapeHtml(c.totalRatings)} reviews</td>
+              <td style="padding:10px 12px; font-weight:700; color:#c2410c;">★ ${parseFloat(c.avgRating || 0).toFixed(1)}</td>
+              <td style="padding:10px 12px; color:#666;">${escapeHtml(c.totalRatings || 0)} reviews</td>
             </tr>
           `;
         });
@@ -5757,15 +5272,14 @@ const banners = JSON.parse(localStorage.getItem('hijin_banners') || '[]');
       } else {
         let rows = '';
         recent10Ratings.forEach(r => {
-          const foundCart = structuredCarts.find(c => c.id === r.cartId);
-          const cartName = foundCart ? foundCart.name : 'Verified Cart';
+          const foundCart = carts.find(c => c.id === r.cartId);
+          const cartName = foundCart ? foundCart.name : 'Unknown Cart';
           const trimmedComment = r.comment && r.comment.length > 45 ? r.comment.substring(0, 45) + '…' : (r.comment || '');
-          const ratingStarCount = parseInt(r.stars || r.rating || 5);
 
           rows += `
             <tr style="border-bottom:1px solid #f0f0f0;">
               <td style="padding:10px 12px; font-weight:600; max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(cartName)}">${escapeHtml(cartName)}</td>
-              <td style="padding:10px 12px; font-weight:700; color:#eab308; white-space:nowrap;">${'★'.repeat(ratingStarCount)}</td>
+              <td style="padding:10px 12px; font-weight:700; color:#eab308; white-space:nowrap;">${'★'.repeat(r.stars || r.rating || 5)}</td>
               <td style="padding:10px 12px; color:#444;" title="${escapeHtml(r.comment)}">${escapeHtml(trimmedComment)}</td>
               <td style="padding:10px 12px; font-size:11px; color:#888; white-space:nowrap;">${escapeHtml(formatDate(r.createdAt))}</td>
             </tr>
@@ -5784,37 +5298,18 @@ const banners = JSON.parse(localStorage.getItem('hijin_banners') || '[]');
             <tbody>
               ${rows}
             </tbody>
-</table>
+          </table>
         `;
       }
 
-      // Compute credit aggregation flows from unified table schemas natively
-      let totalCreditsSum = 0;
-      let topupsSum = 0;
-      let couponsSum = 0;
-      let topupsLength = 0;
-      let coupontxnsLength = 0;
-
-      if (window.supabase) {
-        // Core Wallet Balance Mismatch Fix: Gather metrics dynamically from real entries
-        const { data: cloudCoupons } = await window.supabase.from('hijin_coupons').select('value').eq('status', 'redeemed');
-        if (cloudCoupons) {
-          couponsSum = cloudCoupons.reduce((sum, c) => sum + parseFloat(c.value || 0), 0);
-          coupontxnsLength = cloudCoupons.length;
-        }
-        totalCreditsSum = topupsSum + couponsSum;
-      } else {
-        const credits = txns.filter(t => t.type === 'credit');
-        totalCreditsSum = credits.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
-        
-        const topups = credits.filter(t => t.description === 'Wallet top-up');
-        topupsSum = topups.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
-        topupsLength = topups.length;
-        
-        const coupontxns = credits.filter(t => t.description && t.description.startsWith('Coupon'));
-        couponsSum = coupontxns.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
-        coupontxnsLength = coupontxns.length;
-      }
+      const credits = txns.filter(t => t.type === 'credit');
+      const totalCreditsSum = credits.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+      
+      const topups = credits.filter(t => t.description === 'Wallet top-up');
+      const topupsSum = topups.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+      
+      const coupontxns = credits.filter(t => t.description && t.description.startsWith('Coupon'));
+      const couponsSum = coupontxns.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
 
       panel.innerHTML = `
         <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 4px; color: #222;">System Analytics</h2>
@@ -5886,13 +5381,13 @@ const banners = JSON.parse(localStorage.getItem('hijin_banners') || '[]');
             <div style="border-right:1px solid #f0f0f0; padding-right:24px; min-width:180px;" class="stat-block-item">
               <div style="font-size: 22px; font-weight:700; color:#ea0001;">₹${topupsSum.toFixed(2)}</div>
               <div style="font-size: 12px; color: #111; margin-top: 4px; font-weight: 600;">Top-up Credits</div>
-              <div style="font-size: 11px; color:#666; margin-top:2px;">${topupsLength} transactions</div>
+              <div style="font-size: 11px; color:#666; margin-top:2px;">${topups.length} transactions</div>
             </div>
             <!-- Block 3 -->
             <div style="min-width:180px;" class="stat-block-item border-right-none">
               <div style="font-size: 22px; font-weight:700; color:#ea0001;">₹${couponsSum.toFixed(2)}</div>
               <div style="font-size: 12px; color: #111; margin-top: 4px; font-weight: 600;">Coupon Credits</div>
-              <div style="font-size: 11px; color:#666; margin-top:2px;">${coupontxnsLength} coupons redeemed</div>
+              <div style="font-size: 11px; color:#666; margin-top:2px;">${coupontxns.length} coupons redeemed</div>
             </div>
           </div>
         </div>

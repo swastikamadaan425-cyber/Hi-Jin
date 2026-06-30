@@ -2091,217 +2091,68 @@
       renderHomePanelResultsOnly();
     }
 
-    async function renderHomePanelResultsOnly() {
-      const resultContainer = document.getElementById('home-panel-results');
-      if (!resultContainer) return;
-
-      // Ingestion Matrix: Dynamically merge seed records with incoming approved database vendors
-      let carts = JSON.parse(localStorage.getItem('hijin_carts') || '[]');
+        async function renderHomePanelResultsOnly() {
+      const container = document.getElementById('home-panel-results');
+      if (!container || !window.supabase) return;
       
-      if (window.supabase) {
-        const { data } = await window.supabase.from('hijin_vendors').select('*').eq('status', 'approved');
-        if (data && data.length > 0) {
-          data.forEach(v => {
-            if (!carts.some(c => String(c.id) === String(v.id))) {
-              carts.push({
-                id: v.id,
-                vendorId: v.userId,
-                name: v.businessName || "Dynamic Vendor",
-                description: v.description || "Hygienic street vendor card approved natively on Hi Jin.",
-                imageUrls: v.cartImageUrls && v.cartImageUrls.length > 0 ? v.cartImageUrls : ['https://placehold.co/400x220/ea0001/ffffff?text=Food+Cart'],
-                city: v.city || "Local",
-                lat: v.lat || 30.9010,
-                lng: v.lng || 75.8573,
-                isActive: true,
-                isTopRated: true,
-                avgRating: 4.5,
-                totalRatings: 1,
-                tags: ["Verified", "Hygienic"]
-              });
-            }
-          });
-        }
+      if (selectedCart) {
+        renderCartDetail(container);
+        return;
       }
 
-      const query = customerSearchTerm.trim().toLowerCase();
-      const filteredCarts = carts.filter(c => {
-        const name = (c.name || c.businessName || "").toLowerCase();
-        const city = (c.city || "").toLowerCase();
-        return name.includes(query) || city.includes(query);
-      });
-
-      const topRatedList = filteredCarts.filter(c => c.isTopRated === true);
-      const activeCarts = filteredCarts.filter(c => c.isActive !== false);
-      
-      activeCarts.forEach(c => {
-        c.distance = haversine(userLat, userLng, c.lat || 30.9010, c.lng || 75.8573);
-      });
-      activeCarts.sort((a, b) => a.distance - b.distance);
-
-      let html = '';
-
-      // Top Rated section
-      html += `
-        <div style="margin-bottom: 20px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <span style="font-size: 15px; font-weight: 700; color: #222;">⭐ Top Rated</span>
-            <span style="font-size: 13px; color: #ea0001; cursor: pointer; font-weight: 600;" onclick="clearSearchAndListAll()">View All</span>
-          </div>
-          <div style="display: flex; overflow-x: auto; gap: 12px; padding-bottom: 8px; scrollbar-width: none; -webkit-overflow-scrolling: touch;">
-      `;
-
-      if (topRatedList.length === 0) {
-        html += `
-          <div class="empty-state" style="width: 100%;">
-            <span class="emoji">⭐</span>
-            No top rated carts found.
-          </div>
-        `;
-      } else {
-        topRatedList.forEach(c => {
-          const name = c.name || c.businessName || "Food Cart";
-          const img = (c.imageUrls && c.imageUrls[0]) || (c.cartImageUrls && c.cartImageUrls[0]) || 'https://placehold.co/400x220/ea0001/ffffff?text=Food+Cart';
-          const rRating = Math.round(c.avgRating || 0);
-          let starHtml = '';
-          for (let i = 0; i < rRating; i++) starHtml += '★';
-          for (let i = rRating; i < 5; i++) starHtml += '☆';
-          const firstTag = c.tags && c.tags[0] ? c.tags[0] : "Veg";
-
-          html += `
-            <div onclick="selectCartForDetail(${c.id})" style="flex-shrink: 0; width: 155px; background: white; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: transform 0.15s, box-shadow 0.15s;">
-              <img src="${escapeHtml(img)}" style="width: 100%; height: 90px; object-fit: cover;" onerror="this.onerror=null; this.src='https://placehold.co/400x220/ea0001/ffffff?text=Food+Cart';" />
-              <div style="padding: 10px;">
-                <div style="font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; color: #222;" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
-                <div style="margin-top: 4px; display: flex; align-items: center; gap: 2px;">
-                  <span style="color: #ea0001; font-size: 11px;">${starHtml}</span>
-                  <span style="font-size: 11px; color: #666; font-weight: 500; margin-left: 2px;">${(c.avgRating || 0).toFixed(1)}</span>
-                </div>
-                <div style="background: #ea0001; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-top: 6px; display: inline-block; font-weight: 500;">${escapeHtml(firstTag)}</div>
-              </div>
-            </div>
-          `;
-        });
+      const { data } = await window.supabase.from('hijin_vendors').select('*').eq('status', 'approved');
+      if (!data || data.length === 0) {
+        container.innerHTML = "<p style='color:#666; font-size:13px; text-align:center; padding:24px;'>No approved hygienic food stalls listed in your town yet.</p>";
+        return;
       }
-
-      html += `
-          </div>
+      
+      container.innerHTML = data.map(v => `
+        <div onclick="selectCartForDetail('${v.id}')" style="background:white; border:1px solid #e0e0e0; border-radius:12px; padding:16px; margin-bottom:12px; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+          <h4 style="color:var(--primary); font-size:16px; font-weight:700;">${escapeHtml(v.businessName || 'Street Vendor')}</h4>
+          <p style="font-size:13px; color:#444; margin-top:4px;">📍 ${escapeHtml(v.address || v.city)}</p>
+          <div style="margin-top:6px; color:#ea0001; font-size:12px; font-weight:600;">★ ${(v.avg_rating || 4.5)} (${v.total_ratings || 0} reviews) →</div>
         </div>
-      `;
-
-      // Nearby section
-      html += `
-        <div style="margin-bottom: 20px;">
-          <div style="font-size: 15px; font-weight: 700; margin-bottom: 12px; color: #222;">📍 Nearby Carts</div>
-      `;
-
-      if (activeCarts.length === 0) {
-        html += `
-          <div class="empty-state">
-            <span class="emoji">🔍</span>
-            No carts found for your search.
-          </div>
-        `;
-      } else {
-        activeCarts.forEach(c => {
-          const name = c.name || c.businessName || "Food Cart";
-          const img = (c.imageUrls && c.imageUrls[0]) || (c.cartImageUrls && c.cartImageUrls[0]) || 'https://placehold.co/400x220/c8001a/ffffff?text=Food+Cart';
-          const rRating = Math.round(c.avgRating || 0);
-          let starHtml = '';
-          for (let i = 0; i < rRating; i++) starHtml += '★';
-          for (let i = rRating; i < 5; i++) starHtml += '☆';
-          
-          const tags = c.tags || ["Veg", "Hygienic"];
-          const tagsHtml = tags.map(tag => `
-            <span style="background: #ea0001; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-right: 4px; display: inline-block; font-weight: 500;">${escapeHtml(tag)}</span>
-          `).join('');
-
-          html += `
-            <div onclick="selectCartForDetail(${c.id})" style="display: flex; gap: 12px; padding: 12px; background: white; border: 1px solid #e0e0e0; border-radius: 12px; margin-bottom: 10px; cursor: pointer; position: relative; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: background-color 0.15s;">
-              <img src="${escapeHtml(img)}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; flex-shrink: 0;" onerror="this.onerror=null; this.src='https://placehold.co/400x220/c8001a/ffffff?text=Food+Cart';" />
-              <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden;">
-                <div>
-                  <div style="font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #222;">${escapeHtml(name)}</div>
-                  <div style="font-size: 12px; color: #666; margin-top: 2px;">${escapeHtml(c.city || "Ludhiana")} · ${c.distance.toFixed(1)} km</div>
-                </div>
-                <div style="margin-top: 4px; overflow: hidden; height: 18px; white-space: nowrap; text-overflow: ellipsis;">
-                  ${tagsHtml}
-                </div>
-                <div style="margin-top: 4px; display: flex; align-items: center; gap: 4px;">
-                  <span style="color: #ea0001; font-size: 12px;">${starHtml}</span>
-                  <span style="font-size: 12px; font-weight: 600; color: #333;">${(c.avgRating || 0).toFixed(1)}</span>
-                  <span style="font-size: 12px; color: #666;">(${(c.totalRatings || 0)})</span>
-                </div>
-              </div>
-              <div style="align-self: flex-end; color: #ea0001; font-size: 13px; font-weight: 600; flex-shrink: 0;">View →</div>
-            </div>
-          `;
-        });
-      }
-
-      html += `
-        </div>
-      `;
-
-      resultContainer.innerHTML = html;
-    }
-
-    function renderCartDetail(panel, currentUser) {
-      currentSelectedStars = 0; 
-
-      const c = selectedCart;
-      const name = c.name || c.businessName || "Food Cart";
-      const img = (c.imageUrls && c.imageUrls[0]) || (c.cartImageUrls && c.cartImageUrls[0]) || 'https://placehold.co/400x220/ea0001/ffffff?text=Food+Cart';
-      
-      const rRating = Math.round(c.avgRating || 0);
-      let starHtml = '';
-      for (let i = 0; i < rRating; i++) starHtml += '★';
-      for (let i = rRating; i < 5; i++) starHtml += '☆';
-
-      const tags = c.tags || ["Veg", "Hygienic"];
-      const tagsHtml = tags.map(tag => `
-<span style="background: #ea0001; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-right: 4px; display: inline-block; font-weight: 500;">${escapeHtml(tag)}</span>
       `).join('');
-
-      panel.innerHTML = `
-        <div onclick="goBackToCartList()" style="color: #ea0001; font-size: 13px; font-weight: 600; margin-bottom: 16px; cursor: pointer; display: inline-block;">
-          ← Back to Carts
-        </div>
-
-        <img src="${escapeHtml(img)}" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);" onerror="this.onerror=null; this.src='https://placehold.co/400x220/ea0001/ffffff?text=Food+Cart';" />
-        
-        <h2 style="font-size: 20px; font-weight: 700; margin-top: 12px; margin-bottom: 4px; color: #222;">${escapeHtml(name)}</h2>
-        <div style="font-size: 13px; color: #666; margin-bottom: 8px;">📍 ${escapeHtml(c.city || "Ludhiana")}</div>
-        
-        <div style="margin-bottom: 8px;">
-          ${tagsHtml}
-        </div>
-
-        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 10px;">
-          <span style="color: #ea0001; font-size: 18px;">${starHtml}</span>
-          <span style="font-size: 16px; font-weight: 600; color: #222;">${(c.avgRating || 0).toFixed(1)}</span>
-          <span style="font-size: 13px; color: #666;">(${(c.totalRatings || 0)} ratings)</span>
-        </div>
-
-        <p style="font-size: 14px; color: #444; line-height: 1.6; margin-top: 10px; margin-bottom: 16px;">
-          ${escapeHtml(c.description || "Authentic local tastes prepared cleanly and monitored carefully by Hi Jin.")}
-        </p>
-
-        <hr style="border: none; border-top: 1px solid #f0f0f0; margin: 16px 0;" />
-
-        <div style="font-size: 15px; font-weight: 700; margin-bottom: 12px; color: #222;">Reviews</div>
-        <div id="cart-detail-reviews-list"></div>
-
-        <hr style="border: none; border-top: 1px solid #f0f0f0; margin: 16px 0;" />
-
-        <div style="font-size: 15px; font-weight: 700; margin-bottom: 12px; color: #222;">Leave a Review</div>
-        <div id="cart-detail-review-form-area"></div>
-      `;
-
-      renderCartDetailReviewsList();
-      renderCartDetailReviewForm(currentUser);
     }
 
-    async function renderCartDetailReviewsList() {
+    async function selectCartForDetail(cartId) {
+      if (!window.supabase) return;
+      const { data } = await window.supabase.from('hijin_vendors').select('*').eq('id', cartId).maybeSingle();
+      if (data) {
+        selectedCart = data;
+        renderHomePanelResultsOnly();
+      }
+    }
+
+    function goBackToGrid() {
+      selectedCart = null;
+      renderHomePanelResultsOnly();
+    }
+
+    async function renderCartDetail(container) {
+      const c = selectedCart;
+      const displayImg = (c.cartImageUrls && c.cartImageUrls.startsWith('data:image')) ? c.cartImageUrls : 'https://placehold.co';
+      
+      container.innerHTML = `
+        <div onclick="goBackToGrid()" style="color:#ea0001; font-size:13px; font-weight:600; margin-bottom:14px; cursor:pointer;">← Back to Grid List</div>
+        <img src="${displayImg}" style="width:100%; max-height:160px; object-fit:cover; border-radius:10px; margin-bottom:12px;" />
+        <h3 style="font-size:18px; font-weight:700; color:#111;">${escapeHtml(c.businessName)}</h3>
+        <p style="font-size:13px; color:#666; margin-top:2px;">📍 ${escapeHtml(c.address || c.city)}</p>
+        <p style="font-size:14px; color:#333; margin-top:8px; line-height:1.5;">${escapeHtml(c.description || "Authentic local tastes prepared cleanly and monitored carefully by Hi Jin.")}</p>
+        
+        <hr style="border:none; border-top:1px solid #eee; margin:16px 0;" />
+        <h4 style="font-size:14px; font-weight:700; margin-bottom:10px;">Platform Reviews Matrix</h4>
+        <div id="cart-detail-reviews-list" style="font-size:13px; color:#555;">Loading feedback logs...</div>
+        
+        <div style="margin-top:16px; background:#fdfdfd; padding:12px; border:1px solid #e0e0e0; border-radius:8px;">
+          <h4 style="font-size:13px; font-weight:700; color:#111; margin-bottom:8px;">Leave an Operations Feedback</h4>
+          <textarea id="review-comment-textarea" placeholder="Share your cleanliness setup experience..." style="min-height:60px; font-size:13px;"></textarea>
+          <button type="button" onclick="submitCloudReview()" class="btn-primary" style="margin-top:8px; min-height:34px; font-size:12px; width:auto; padding:0 16px;">Submit Review</button>
+        </div>
+      `;
+      renderCartDetailReviewsList();
+    }
+
       const listContainer = document.getElementById('cart-detail-reviews-list');
       if (!listContainer) return;
 

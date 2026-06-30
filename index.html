@@ -8,6 +8,24 @@
   <meta name="description" content="Discover hygienic street food carts near you. Rate vendors, redeem coupons, and eat safely with Hi Jin.">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#ea0001">
+  <!-- Live Database and Camera Optics Engines -->
+<script src="https://jsdelivr.net"></script>
+<script src="https://jsdelivr.net"></script>
+
+<script>
+  // Put your actual Supabase text keys right inside these quotes
+  const SUPABASE_URL = "https://wcipnmwnguzchmsjqegt.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjaXBubXduZ3V6Y2htc2pxZWd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2NjI3OTgsImV4cCI6MjA5ODIzODc5OH0.Y9wUXjqgY3ssHzpfNbF2bUbJ_aVz5Nd6kPxR-Ja4jSM";
+
+  // Connects the app automatically to your cloud database
+  let supabase = null;
+  if (SUPABASE_URL && SUPABASE_ANON_KEY && typeof window.supabase !== 'undefined') {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    window.supabase = supabase; // global map lock
+    console.log("Hi Jin connected to Supabase live!");
+  }
+</script>
+
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='%23ea0001'/><text y='.9em' x='50%' text-anchor='middle' font-size='58' font-family='sans-serif' fill='white' font-weight='700'>H</text></svg>">
   
   <style>

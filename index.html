@@ -2150,7 +2150,42 @@
           <button type="button" onclick="submitCloudReview()" class="btn-primary" style="margin-top:8px; min-height:34px; font-size:12px; width:auto; padding:0 16px;">Submit Review</button>
         </div>
       `;
-      renderCartDetailReviewsList();
+      await renderCartDetailReviewsList();
+    }
+
+    async function renderCartDetailReviewsList() {
+      const listDiv = document.getElementById('cart-detail-reviews-list');
+      if (!listDiv || !window.supabase || !selectedCart) return;
+
+      const { data } = await window.supabase.from('hijin_ratings').select('*').eq('cart_id', selectedCart.id).order('created_at', { ascending: false });
+      if (!data || data.length === 0) {
+        listDiv.innerHTML = "<p style='color:#888; font-style:italic;'>No custom review records written for this storefront yet.</p>";
+        return;
+      }
+
+      listDiv.innerHTML = data.map(r => `
+        <div style="border-bottom:1px solid #f5f5f5; padding:8px 0;">
+          <div style="font-weight:600; color:#222;">${escapeHtml(r.customer_name || 'Anonymous')} <span style="color:#eab308; float:right;">${'★'.repeat(r.rating || 5)}</span></div>
+          <p style="color:#555; margin-top:2px; line-height:1.4;">${escapeHtml(r.comment)}</p>
+        </div>
+      `).join('');
+    }
+
+    async function submitCloudReview() {
+      const comment = document.getElementById('review-comment-textarea').value.trim();
+      if (!comment || !window.supabase || !selectedCart) return;
+
+      await window.supabase.from('hijin_ratings').insert([{
+        cart_id: selectedCart.id,
+        customer_id: internalSession.userId || "guest",
+        customer_name: internalSession.name || "Hi Jin User",
+        rating: 5,
+        stars: 5,
+        comment: comment
+      }]);
+      alert("Operations feedback logged safely into database index tables!");
+      await renderCartDetailReviewsList();
+    }
     }
 
       const listContainer = document.getElementById('cart-detail-reviews-list');
